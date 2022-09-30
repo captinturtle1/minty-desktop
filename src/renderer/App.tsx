@@ -3,7 +3,7 @@ import 'tailwindcss/tailwind.css';
 import './App.css';
 
 import Menus from './components/Menus'
-import Nav from './components/nav'
+import Nav from './components/Nav'
 
 
 
