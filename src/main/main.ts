@@ -14,6 +14,8 @@ import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
+import fs from 'fs';
+
 
 class AppUpdater {
   constructor() {
@@ -30,6 +32,36 @@ ipcMain.on('ipc-example', async (event, arg) => {
   console.log(msgTemplate(arg));
   event.reply('ipc-example', msgTemplate('pong'));
 });
+
+ipcMain.on('write-address', (event, data) => {
+  fs.readFile('wallets.json', 'utf8', (err: any, readData: any) => {
+  	if (err) {
+  		throw err;
+  	}
+
+    let prasedData = JSON.parse(data);
+    let walletsObject: any = {"wallets": <any>[]};
+
+    if (readData !== '') {
+      let readDataParsed = JSON.parse(readData);
+      walletsObject.wallets = readDataParsed.wallets
+      walletsObject.wallets.push(prasedData);
+      fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
+      	if (err) {
+      		throw err;
+      	}
+      });
+    } else {
+      walletsObject.wallets.push(prasedData);
+      fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
+      	if (err) {
+      		throw err;
+      	}
+      });
+    }
+  });
+  event.reply('write-address', 'done');
+})
 
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
