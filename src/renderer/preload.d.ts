@@ -4,7 +4,9 @@ declare global {
   interface Window {
     electron: {
       ipcRenderer: {
-		    writeAddress(data: string): unknown;
+		    writeAddress(data: any): unknown;
+        deleteAddress(data: number): unknown;
+        removeAllWallets(): unknown;
         sendMessage(channel: Channels, args: unknown[]): void;
         on(
           channel: string,

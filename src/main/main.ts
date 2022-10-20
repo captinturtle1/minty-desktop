@@ -39,20 +39,21 @@ ipcMain.on('write-address', (event, data) => {
   		throw err;
   	}
 
-    let prasedData = JSON.parse(data);
     let walletsObject: any = {"wallets": <any>[]};
 
     if (readData !== '') {
       let readDataParsed = JSON.parse(readData);
       walletsObject.wallets = readDataParsed.wallets
-      walletsObject.wallets.push(prasedData);
+      let newArray = walletsObject.wallets.concat(data);
+      walletsObject.wallets = newArray;
       fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
       	if (err) {
       		throw err;
       	}
       });
     } else {
-      walletsObject.wallets.push(prasedData);
+      let newArray = walletsObject.wallets.concat(data);
+      walletsObject.wallets = newArray;
       fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
       	if (err) {
       		throw err;
@@ -61,6 +62,39 @@ ipcMain.on('write-address', (event, data) => {
     }
   });
   event.reply('write-address', 'done');
+})
+
+ipcMain.on('delete-address', (event, index) => {
+  fs.readFile('wallets.json', 'utf8', (err: any, readData: any) => {
+  	if (err) {
+  		throw err;
+  	}
+
+    if (readData !== '') {
+      let walletsObject: any = {"wallets": <any>[]};
+      let readDataParsed = JSON.parse(readData);
+      walletsObject.wallets = readDataParsed.wallets
+      walletsObject.wallets.splice(index, 1)
+      fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
+      	if (err) {
+      		throw err;
+      	}
+      });
+    } else {
+      console.log('no data');
+    }
+  });
+  event.reply('delete-address', 'done');
+})
+
+ipcMain.on('remove-all-wallets', (event) => {
+  let walletsObject: any = {"wallets": <any>[]};
+  fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
+  	if (err) {
+  		throw err;
+  	}
+  });
+  event.reply('remove-all-wallets', 'done');
 })
 
 if (process.env.NODE_ENV === 'production') {
@@ -106,6 +140,8 @@ const createWindow = async () => {
     show: false,
     width: 1024,
     height: 728,
+    minWidth: 1024,
+    minHeight: 728,
     icon: getAssetPath('icon.png'),
     webPreferences: {
       sandbox: false,
@@ -115,7 +151,7 @@ const createWindow = async () => {
     },
     titleBarStyle: 'hidden',
     titleBarOverlay: {
-      color: '#dbeafe',
+      color: '#3b82f6',
       symbolColor: '#',
       height: 40
     },
