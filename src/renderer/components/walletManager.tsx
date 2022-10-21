@@ -33,8 +33,13 @@ export function removeAllWallets() {
 	window.electron.ipcRenderer.removeAllWallets();
 }
 
-export async function getBalance(address) {
-	let balanceWei = await provider.getBalance(address);
-	let balanceEther = ethers.utils.formatEther(balanceWei);
-	return balanceEther
+export async function getBalance(wallets) {
+	let walletsBalanceArray: any = []
+	for (let i = 0; i < wallets.length; i++) {
+		let balanceWei = await provider.getBalance(wallets[i].address);
+		let balanceEther = ethers.utils.formatEther(balanceWei);
+		walletsBalanceArray[i] = balanceEther;
+	}
+	
+	return walletsBalanceArray;
 }
