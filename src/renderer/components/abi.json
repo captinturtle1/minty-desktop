@@ -1,0 +1,20 @@
+[
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "receivers",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "etherPer",
+				"type": "uint256"
+			}
+		],
+		"name": "disperseEther",
+		"outputs": [],
+		"stateMutability": "payable",
+		"type": "function"
+	}
+]
