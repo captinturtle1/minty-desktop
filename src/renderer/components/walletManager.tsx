@@ -2,6 +2,7 @@ import { ethers } from 'ethers';
 import abi from './abi.json';
 
 const provider = new ethers.providers.InfuraProvider("goerli", "ccd0f54c729d4e58a9b7b34cb3984555")
+const providerMainnet = new ethers.providers.InfuraProvider("mainnet", "ccd0f54c729d4e58a9b7b34cb3984555")
 const disperseAddress = "0x1EbD7f4ea90DBD3d6Be68869502B2022Aa000d0c";
 
 export function createAndStoreWallet(name: string, amount: number) {
@@ -68,6 +69,38 @@ export async function disperse(walletsSelected, wallets, amountToDisperse, selec
 				console.log("Confirmed");
 				resolve(true);
 			})
+		} catch (err) {
+			console.log(err);
+			resolve(false);
+		}
+	});
+}
+
+export async function consolidate(walletSelected, walletsSelected, wallets) {
+	return new Promise(async (resolve) => {
+		console.log("consolidating");
+		try {
+			for (let i = 0; i < walletsSelected.length; i++) {
+				let signer = new ethers.Wallet(wallets[walletsSelected[i]].privateKey, provider);
+				let balanceWei:any = await provider.getBalance(wallets[walletsSelected[i]].address);
+
+				let bigNumberGas = await provider.getGasPrice();
+				let gas:any = ethers.utils.formatUnits(bigNumberGas, "gwei")
+				let calculatedCost = gas * 21000;
+				let balanceMinusFee = balanceWei - calculatedCost;
+
+				console.log(signer);
+				const tx = await signer.sendTransaction({
+					to: walletSelected,
+					value: balanceMinusFee
+				});
+				tx.wait(1).then(()=> {
+					console.log("confirmed");
+				})
+				console.log(tx);
+
+			}
+			resolve(true);
 		} catch (err) {
 			console.log(err);
 			resolve(false);

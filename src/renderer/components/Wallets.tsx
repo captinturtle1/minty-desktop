@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createAndStoreWallet, removeWallet, removeAllWallets, getBalance, disperse } from './walletManager';
+import { createAndStoreWallet, removeWallet, removeAllWallets, getBalance, disperse, consolidate } from './walletManager';
 import { FaTrash, FaKey } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai'
 import { BiRefresh } from 'react-icons/bi'
@@ -10,7 +10,7 @@ import wallets from '../../../wallets.json'
 const Wallets = () => {
   const [createWalletName, setCreateWalletName] = useState('');
   const [createWalletAmount, setCreateWalletAmount] = useState(1);
-  const [selectedMainAddress, setSelectedMainAddress] = useState();
+  const [selectedMainAddress, setSelectedMainAddress] = useState<any>();
   const [selectedPk, setSelectedPk] = useState('');
   const [amountToDisperse, setAmountToDisperse] = useState(1);
   const [walletsSelected, setWalletsSelected] = useState<any>([]);
@@ -19,6 +19,11 @@ const Wallets = () => {
 
   useEffect(() => {
     updateWalletBalances();
+    setSelectedMainAddress(wallets.wallets[0].address);
+    let result = wallets.wallets.map(a => a.address);
+    let selectedIndex = result.findIndex((element) => element == wallets.wallets[0].address);
+    let selectedPk = wallets.wallets[selectedIndex].privateKey;
+    setSelectedPk(selectedPk);
   }, []);
 
   const updateWalletBalances = async () => {
@@ -30,6 +35,12 @@ const Wallets = () => {
   const disperseToWallets = async () => {
     setActiveTransaction(true);
     await disperse(walletsSelected, wallets.wallets, amountToDisperse, selectedPk);
+    updateWalletBalances();
+  }
+
+  const consolidateWallets = async () => {
+    setActiveTransaction(true);
+    await consolidate(selectedMainAddress, walletsSelected, wallets.wallets);
     updateWalletBalances();
   }
 
@@ -140,7 +151,7 @@ const Wallets = () => {
             <AiOutlineLoading3Quarters className='animate-spin m-auto'/>
           )}
         </div>
-        <div className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[100px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[100px] flex"}>
+        <div onClick={() => {activeTransaction ? null : consolidateWallets()}} className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[100px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[100px] flex"}>
           {!activeTransaction ? (
             <div className="m-auto">Consolidate</div>
           ):(
