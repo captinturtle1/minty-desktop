@@ -44,7 +44,6 @@ export async function getBalance(wallets) {
 			let balanceEther = ethers.utils.formatEther(balanceWei);
 			walletsBalanceArray[i] = balanceEther.substring(0,7);
 		}
-		
 		resolve(walletsBalanceArray);
 	});
 }

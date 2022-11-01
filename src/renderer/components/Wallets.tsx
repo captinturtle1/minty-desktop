@@ -121,7 +121,7 @@ const Wallets = () => {
             className="w-10 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
           />
         </form>
-        <div className="my-auto">
+        <div className="my-auto flex-grow">
           Ξ{walletsSelected.length * amountToDisperse}
         </div>
         <form>
