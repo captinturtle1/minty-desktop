@@ -9,10 +9,10 @@ import wallets from '../../../wallets.json'
 
 const Wallets = () => {
   const [createWalletName, setCreateWalletName] = useState('');
-  const [createWalletAmount, setCreateWalletAmount] = useState(1);
+  const [createWalletAmount, setCreateWalletAmount] = useState<number>(1);
   const [selectedMainAddress, setSelectedMainAddress] = useState<any>();
   const [selectedPk, setSelectedPk] = useState('');
-  const [amountToDisperse, setAmountToDisperse] = useState(1);
+  const [amountToDisperse, setAmountToDisperse] = useState<number>(0);
   const [walletsSelected, setWalletsSelected] = useState<any>([]);
   const [walletsBalances, setWalletsBalances] = useState<any>([]);
   const [activeTransaction, setActiveTransaction] = useState(false);
@@ -33,15 +33,19 @@ const Wallets = () => {
   }
 
   const disperseToWallets = async () => {
-    setActiveTransaction(true);
-    await disperse(walletsSelected, wallets.wallets, amountToDisperse, selectedPk);
-    updateWalletBalances();
+    if (amountToDisperse > 0) {
+      setActiveTransaction(true);
+      await disperse(walletsSelected, wallets.wallets, amountToDisperse, selectedPk);
+      updateWalletBalances();
+    }
   }
 
   const consolidateWallets = async () => {
-    setActiveTransaction(true);
-    await consolidate(selectedMainAddress, walletsSelected, wallets.wallets);
-    updateWalletBalances();
+    if (walletsSelected.length > 0) {
+      setActiveTransaction(true);
+      await consolidate(selectedMainAddress, walletsSelected, wallets.wallets);
+      updateWalletBalances();
+    }
   }
 
   const handleWalletNameChange = event => {
@@ -133,7 +137,7 @@ const Wallets = () => {
           />
         </form>
         <div className="my-auto flex-grow">
-          Ξ{walletsSelected.length * amountToDisperse}
+          Ξ{((walletsSelected.length * amountToDisperse).toString()).slice(0, 5)}
         </div>
         <form>
           <select

@@ -59,11 +59,12 @@ export async function disperse(walletsSelected, wallets, amountToDisperse, selec
 			for (let i = 0; i < walletsSelected.length; i++) {
 				walletAddressArray.push(wallets[walletsSelected[i]].address);
 			}
-			let cost = (amountToDisperse * walletAddressArray.length) * 1000000000000000000;
-			let amountPer = amountToDisperse * 1000000000000000000;
+			let cost = ethers.utils.parseEther((amountToDisperse * walletAddressArray.length).toString());
+			let amountPer = ethers.utils.parseEther(amountToDisperse);
 			let overrides = {
-				value: cost.toString()
+				value: cost
 			};
+			console.log('sending', parseInt(amountPer.toString()), 'each to', walletAddressArray);
 			let receipt = await disperseContract.disperseEther(walletAddressArray, amountPer, overrides);
 			receipt.wait(1).then(() => {
 				console.log("Confirmed");
@@ -81,26 +82,26 @@ export async function consolidate(walletSelected, walletsSelected, wallets) {
 		console.log("consolidating");
 		try {
 			for (let i = 0; i < walletsSelected.length; i++) {
-				let signer = new ethers.Wallet(wallets[walletsSelected[i]].privateKey, provider);
+				let wallet = new ethers.Wallet(wallets[walletsSelected[i]].privateKey, provider);
 				let balanceWei:any = await provider.getBalance(wallets[walletsSelected[i]].address);
+				let bigNumberGas:any = await provider.getGasPrice();
 
-				let bigNumberGas = await provider.getGasPrice();
-				let gas:any = ethers.utils.formatUnits(bigNumberGas, "gwei")
-				let calculatedCost = gas * 21000;
+				let calculatedCost = bigNumberGas * 50000;
 				let balanceMinusFee = balanceWei - calculatedCost;
+				let minusFeeString = balanceMinusFee.toString();
 
-				console.log(signer);
-				const tx = await signer.sendTransaction({
+				console.log('sending', parseInt(minusFeeString), 'from', wallets[walletsSelected[i]].address, 'to', walletSelected);
+				const tx = await wallet.sendTransaction({
 					to: walletSelected,
-					value: balanceMinusFee
+					value: minusFeeString
 				});
 				tx.wait(1).then(()=> {
-					console.log("confirmed");
+					if (i == walletsSelected.length - 1) {
+						console.log('resolving');
+						resolve(true);
+					}
 				})
-				console.log(tx);
-
 			}
-			resolve(true);
 		} catch (err) {
 			console.log(err);
 			resolve(false);

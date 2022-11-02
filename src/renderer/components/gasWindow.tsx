@@ -8,11 +8,10 @@ const gasWindow = () => {
     
     useEffect(() => {
       getGas();
+      setInterval(async function() {
+        getGas();
+      }, 60000);
     }, []);
-
-    setInterval(async function() {
-      getGas();
-    }, 60000);
 
     const getGas = async () => {
       let bigNumberGas = await provider.getGasPrice();
