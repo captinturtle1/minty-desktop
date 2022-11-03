@@ -28,7 +28,40 @@ export function createAndStoreWallet(name: string, amount: number) {
 	window.electron.ipcRenderer.writeAddress(walletArray);
 }
 
-export function removeWallet(index: number) {
+export function importAndStoreWallet(name: string, pkString) {
+	console.log(pkString);
+	let noSpace = pkString.replace(/\s+/g, '');
+	console.log(noSpace);
+	let pkArray = noSpace.split(",");
+	console.log(pkArray);
+	let walletArray: any = [];
+	for (let i = 0; i < pkArray.length; i++) {
+		if (!/^0x[a-fA-F0-9]{64}$/.test(pkArray[i])) {
+			console.log(pkArray[i], "not a pk");
+			return false;
+        }
+		let newWalletData: any;
+		let newwallet = new ethers.Wallet(pkArray[i]);
+		if (pkArray.length > 0) {
+			newWalletData = {
+				"name": `${name}${i + 1}`,
+				"address": newwallet.address,
+				"privateKey": newwallet.privateKey
+			}
+		} else {
+			newWalletData = {
+				"name": name,
+				"address": newwallet.address,
+				"privateKey": newwallet.privateKey
+			}
+		}
+		walletArray.push(newWalletData);
+	}
+	window.electron.ipcRenderer.writeAddress(walletArray);
+	return true;
+}
+
+export function removeWallet(index) {
 	window.electron.ipcRenderer.deleteAddress(index);
 }
 

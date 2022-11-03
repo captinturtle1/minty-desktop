@@ -5,7 +5,7 @@ declare global {
     electron: {
       ipcRenderer: {
 		    writeAddress(data: any): unknown;
-        deleteAddress(data: number): unknown;
+        deleteAddress(data: number[]): unknown;
         removeAllWallets(): unknown;
         sendMessage(channel: Channels, args: unknown[]): void;
         on(

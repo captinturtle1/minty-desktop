@@ -74,7 +74,9 @@ ipcMain.on('delete-address', (event, index) => {
       let walletsObject: any = {"wallets": <any>[]};
       let readDataParsed = JSON.parse(readData);
       walletsObject.wallets = readDataParsed.wallets
-      walletsObject.wallets.splice(index, 1)
+      for (let i = 0; i < index.length; i++) {
+        walletsObject.wallets.splice(index[i], 1)
+      }
       fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
       	if (err) {
       		throw err;

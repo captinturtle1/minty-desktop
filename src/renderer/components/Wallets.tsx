@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createAndStoreWallet, removeWallet, removeAllWallets, getBalance, disperse, consolidate } from './walletManager';
+import { createAndStoreWallet, removeWallet, removeAllWallets, getBalance, disperse, consolidate, importAndStoreWallet } from './walletManager';
 import { FaTrash, FaKey } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai'
 import { BiRefresh } from 'react-icons/bi'
@@ -9,6 +9,7 @@ import wallets from '../../../wallets.json'
 
 const Wallets = () => {
   const [createWalletName, setCreateWalletName] = useState('');
+  const [importWalletName, setImportWalletName] = useState('');
   const [createWalletAmount, setCreateWalletAmount] = useState<number>(1);
   const [selectedMainAddress, setSelectedMainAddress] = useState<any>();
   const [selectedPk, setSelectedPk] = useState('');
@@ -16,14 +17,20 @@ const Wallets = () => {
   const [walletsSelected, setWalletsSelected] = useState<any>([]);
   const [walletsBalances, setWalletsBalances] = useState<any>([]);
   const [activeTransaction, setActiveTransaction] = useState(false);
+  const [importInput, setImportInput] = useState<string>();
+  const [deleteAllOpen, setDeleteAllOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
-    updateWalletBalances();
-    setSelectedMainAddress(wallets.wallets[0].address);
-    let result = wallets.wallets.map(a => a.address);
-    let selectedIndex = result.findIndex((element) => element == wallets.wallets[0].address);
-    let selectedPk = wallets.wallets[selectedIndex].privateKey;
-    setSelectedPk(selectedPk);
+    if (wallets.wallets.length > 0) {
+      updateWalletBalances();
+      setSelectedMainAddress(wallets.wallets[0].address);
+      let result = wallets.wallets.map(a => a.address);
+      let selectedIndex = result.findIndex((element) => element == wallets.wallets[0].address);
+      let selectedPk = wallets.wallets[selectedIndex].privateKey;
+      setSelectedPk(selectedPk);
+    }
   }, []);
 
   const updateWalletBalances = async () => {
@@ -52,6 +59,19 @@ const Wallets = () => {
     let limit = 12;
       setCreateWalletName(event.target.value.slice(0, limit));
   };
+
+  const handleImportNameChange = event => {
+    let limit = 12;
+    setImportWalletName(event.target.value.slice(0, limit));
+  };
+
+  const handleImportBoxChange = event => {
+    setImportInput(event.target.value);
+  };
+
+  const onClickStopPropagation = (e) => {
+    e.stopPropagation();
+  }
 
   const handleWalletAmountChange = event => {
     let limit = 100;
@@ -104,8 +124,27 @@ const Wallets = () => {
   const handleRemoveWallet = (e, index) => {
     e.stopPropagation();
     setWalletsSelected([]);
-    removeWallet(index);
+    let indexs:number[] = [];
+    indexs[0] = index;
+    removeWallet(indexs);
   }
+
+  const handleBatchRemoveWallet = () => {
+    setWalletsSelected([]);
+    removeWallet(walletsSelected);
+  }
+
+  function saveFile() {
+    let content:any = [];
+    for (let i = 0; i < wallets.wallets.length; i++) {
+      content.push(wallets.wallets[i].privateKey);
+    }
+    let element = document.createElement("a");
+    let file = new Blob([content], {type: "text/plain"});
+    element.href = URL.createObjectURL(file);
+    element.download = "mintyExports.txt";
+    element.click();
+}
 
   const walletsList = wallets.wallets.map((addressObject, index: any) =>
     <div onClick={() => selectAddress(index)} key={index} className={walletsSelected.includes(index) ? "flex p-2 bg-gray-400 bg-opacity-50 rounded-lg my-1 mx-2 transition-all" : "flex p-2 bg-gray-500 bg-opacity-50 rounded-lg my-1 mx-2 transition-all"}>
@@ -181,30 +220,85 @@ const Wallets = () => {
       <div className="overflow-y-scroll flex-grow">
         {walletsList}
       </div>
-      <div className="flex gap-6 my-5">  
-        <div className="flex gap-2">
-          <form className="flex pt-1 gap-3 text-[0.75rem]">
-            <input
-              value={createWalletName}
-              type="text"
-              onChange={handleWalletNameChange}
-              placeholder="name"
-              className="w-24 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
-            />
-          </form>
-          <form className="flex pt-1 gap-3 text-[0.75rem]">
-            <input
-              value={createWalletAmount}
-              type='number'
-              onChange={handleWalletAmountChange}
-              placeholder="#"
-              className="w-10 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
-            />
-          </form>
+      <div className="flex gap-6 my-5"> 
+        <div onClick={() => setImportOpen(true)} className="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Import</div> 
+        <div onClick={saveFile} className="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Export</div>
+        <div className="grow">
+          <div onClick={() => setCreateOpen(true)} className="bg-green-500 hover:bg-green-400 active:bg-green-600 py-2 w-20 text-center transition-all cursor-pointer rounded-xl">Create</div>
         </div>
-        <div onClick={() => createAndStoreWallet(createWalletName, createWalletAmount)} className="bg-green-500 hover:bg-green-400 active:bg-green-600 py-2 w-20 text-center transition-all cursor-pointer rounded-xl">Create</div>
-        <div onClick={removeAllWallets} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Delete All</div>
+        <div onClick={handleBatchRemoveWallet} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-10 text-center transition-all cursor-pointer rounded-xl flex"><FaTrash className="m-auto"/></div>
+        <div onClick={() => setDeleteAllOpen(true)} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Delete All</div>
       </div>
+      {createOpen ? (
+        <>
+          <div onClick={() => setCreateOpen(false)} className="absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex">
+            <div onClick={(e) => onClickStopPropagation(e)} className="bg-slate-900 px-16 py-8 rounded-lg m-auto relative flex flex-col gap-3">
+              <div className="font-bold m-auto">Create Wallets</div>
+              <div className="flex gap-2">
+                <form className="flex gap-3 text-[0.75rem]">
+                  <input
+                    value={createWalletName}
+                    type="text"
+                    onChange={handleWalletNameChange}
+                    placeholder="name"
+                    className="w-24 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
+                  />
+                </form>
+                <form className="flex gap-3 text-[0.75rem]">
+                  <input
+                    value={createWalletAmount}
+                    type='number'
+                    onChange={handleWalletAmountChange}
+                    placeholder="#"
+                    className="w-10 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
+                  />
+                </form>
+              </div>
+              <div onClick={() => {createAndStoreWallet(createWalletName, createWalletAmount), setCreateOpen(false)}} className="bg-green-500 hover:bg-green-400 active:bg-green-600 py-2 w-20 text-center transition-all cursor-pointer rounded-xl m-auto">Create</div>
+            </div>
+          </div>
+        </>
+      ):(
+        <></>
+      )}
+      {deleteAllOpen ? (
+        <>
+          <div onClick={() => setDeleteAllOpen(false)} className="absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex">
+            <div onClick={(e) => onClickStopPropagation(e)} className="bg-slate-900 px-16 py-8 rounded-lg m-auto relative">
+              <div>Are you sure?</div>
+              <div onClick={() => {removeAllWallets(), setDeleteAllOpen(false)}} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl mt-5">Delete All</div>
+            </div>
+          </div>
+        </>
+      ):(
+        <></>
+      )}
+      {importOpen ? (
+        <>
+          <div onClick={() => setImportOpen(false)} className="absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex">
+            <div onClick={(e) => onClickStopPropagation(e)} className="bg-slate-900 px-16 py-8 rounded-lg m-auto relative flex flex-col">
+              <form className="mb-2 flex gap-3 text-[0.75rem]">
+                <input
+                  value={importWalletName}
+                  type="text"
+                  onChange={handleImportNameChange}
+                  placeholder="name"
+                  className="w-24 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
+                />
+              </form>
+              <textarea
+                value={importInput}
+                onChange={handleImportBoxChange}
+                placeholder="privatekey1, privatekey2, privatekey3, privatekey4, privatekey5..."
+                className="p-2 w-[500px] h-64 focus:outline-none rounded-lg bg-neutral-800 resize-none"
+              />
+              <div onClick={() => {importAndStoreWallet(importWalletName, importInput), setImportOpen(false), setImportInput(""), setImportWalletName("");}} className="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl mt-5 m-auto">Import</div>
+            </div>
+          </div>
+        </>
+      ):(
+        <></>
+      )}
     </div>
   );
 }
