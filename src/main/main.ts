@@ -47,9 +47,9 @@ ipcMain.on('write-address', (event, data) => {
       let newArray = walletsObject.wallets.concat(data);
       walletsObject.wallets = newArray;
       fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
-      	if (err) {
-      		throw err;
-      	}
+        if (err) {
+          throw err;
+        }
       });
     } else {
       let newArray = walletsObject.wallets.concat(data);
@@ -70,12 +70,17 @@ ipcMain.on('delete-address', (event, index) => {
   		throw err;
   	}
 
+    const compareNumbers = (a, b) => {
+      return b - a;
+    }
+
     if (readData !== '') {
       let walletsObject: any = {"wallets": <any>[]};
       let readDataParsed = JSON.parse(readData);
       walletsObject.wallets = readDataParsed.wallets
+      index.sort(compareNumbers);
       for (let i = 0; i < index.length; i++) {
-        walletsObject.wallets.splice(index[i], 1)
+        walletsObject.wallets.splice(index[i], 1);
       }
       fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
       	if (err) {
