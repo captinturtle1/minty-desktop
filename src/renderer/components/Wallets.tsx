@@ -135,16 +135,32 @@ const Wallets = () => {
   }
 
   function saveFile() {
-    let content:any = [];
-    for (let i = 0; i < wallets.wallets.length; i++) {
-      content.push(wallets.wallets[i].privateKey);
-    }
     let element = document.createElement("a");
-    let file = new Blob([content], {type: "text/plain"});
+    let file = new Blob([JSON.stringify(wallets)], {type: "application/json"});
     element.href = URL.createObjectURL(file);
-    element.download = "mintyExports.txt";
+    element.download = "mintyExports.json";
     element.click();
-}
+  }
+
+  const handleFileInput = (e) => {
+    if (e.target != null) {
+      let file = (e.target as any).files[0];
+      let reader:any = new FileReader();
+
+      reader.addEventListener("load", () => {
+        try {
+          let data = JSON.parse(reader.result);
+          console.log(data.wallets);
+        } catch (err) {
+          console.log(err);
+        }
+      }, false);
+      
+      if (file.type == "application/json") {
+        reader.readAsText(file);
+      }
+    }
+  };
 
   const walletsList = wallets.wallets.map((addressObject, index: any) =>
     <div onClick={() => selectAddress(index)} key={index} className={walletsSelected.includes(index) ? "flex p-2 bg-gray-400 bg-opacity-50 rounded-lg my-1 mx-2 transition-all" : "flex p-2 bg-gray-500 bg-opacity-50 rounded-lg my-1 mx-2 transition-all"}>
@@ -292,7 +308,18 @@ const Wallets = () => {
                 placeholder="privatekey1, privatekey2, privatekey3, privatekey4, privatekey5..."
                 className="p-2 w-[500px] h-64 focus:outline-none rounded-lg bg-neutral-800 resize-none"
               />
-              <div onClick={() => {importAndStoreWallet(importWalletName, importInput), setImportOpen(false), setImportInput(""), setImportWalletName("");}} className="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl mt-5 m-auto">Import</div>
+              <div className="flex gap-5 mt-5">
+                <div onClick={() => {importAndStoreWallet(importWalletName, importInput), setImportOpen(false), setImportInput(""), setImportWalletName("");}} className="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Import Keys</div>
+                <div className="m-auto font-bold">or</div>
+                <form className="m-auto">
+                  <input
+                    type="file"
+                    accept="application/json"
+                    onChange={handleFileInput}
+                    className="file:bg-orange-500 file:hover:bg-orange-400 file:active:bg-orange-600 file:py-2 file:w-24 file:text-center file:transition-all file:cursor-pointer file:rounded-xl file:text-white file:border-0"
+                  />
+                </form>
+              </div>
             </div>
           </div>
         </>
