@@ -2,7 +2,6 @@ import { ethers } from 'ethers';
 import abi from './abi.json';
 
 const provider = new ethers.providers.InfuraProvider("goerli", "ccd0f54c729d4e58a9b7b34cb3984555")
-const providerMainnet = new ethers.providers.InfuraProvider("mainnet", "ccd0f54c729d4e58a9b7b34cb3984555")
 const disperseAddress = "0x1EbD7f4ea90DBD3d6Be68869502B2022Aa000d0c";
 
 export function createAndStoreWallet(name: string, amount: number) {
@@ -117,10 +116,10 @@ export async function consolidate(walletSelected, walletsSelected, wallets) {
 			for (let i = 0; i < walletsSelected.length; i++) {
 				let wallet = new ethers.Wallet(wallets[walletsSelected[i]].privateKey, provider);
 				let balanceWei:any = await provider.getBalance(wallets[walletsSelected[i]].address);
-				let bigNumberGas:any = await provider.getGasPrice();
+				let bigNumberGas:any = await provider.getFeeData();
 
-				let calculatedCost = bigNumberGas * 50000;
-				let balanceMinusFee = balanceWei - calculatedCost;
+				let calculatedCost = (bigNumberGas.maxFeePerGas.add(bigNumberGas.maxPriorityFeePerGas)).mul(21000);
+				let balanceMinusFee = balanceWei.sub(calculatedCost);
 				let minusFeeString = balanceMinusFee.toString();
 
 				console.log('sending', parseInt(minusFeeString), 'from', wallets[walletsSelected[i]].address, 'to', walletSelected);

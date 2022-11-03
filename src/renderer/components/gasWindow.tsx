@@ -4,7 +4,7 @@ import { ethers } from 'ethers';
 const gasWindow = () => {
     const [gwei, setGwei] = useState('0');
 
-    const provider = new ethers.providers.InfuraProvider("mainnet", "ccd0f54c729d4e58a9b7b34cb3984555")
+    const provider = new ethers.providers.InfuraProvider("goerli", "ccd0f54c729d4e58a9b7b34cb3984555")
     
     useEffect(() => {
       getGas();
