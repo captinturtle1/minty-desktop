@@ -34,7 +34,7 @@ ipcMain.on('ipc-example', async (event, arg) => {
 });
 
 ipcMain.on('write-address', (event, data) => {
-  fs.readFile('wallets.json', 'utf8', (err: any, readData: any) => {
+  fs.readFile('data.json', 'utf8', (err: any, readData: any) => {
   	if (err) {
   		throw err;
   	}
@@ -46,7 +46,7 @@ ipcMain.on('write-address', (event, data) => {
       walletsObject.wallets = readDataParsed.wallets
       let newArray = walletsObject.wallets.concat(data);
       walletsObject.wallets = newArray;
-      fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
+      fs.writeFile('data.json', JSON.stringify(walletsObject), (err) => {
         if (err) {
           throw err;
         }
@@ -54,7 +54,7 @@ ipcMain.on('write-address', (event, data) => {
     } else {
       let newArray = walletsObject.wallets.concat(data);
       walletsObject.wallets = newArray;
-      fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
+      fs.writeFile('data.json', JSON.stringify(walletsObject), (err) => {
       	if (err) {
       		throw err;
       	}
@@ -65,7 +65,7 @@ ipcMain.on('write-address', (event, data) => {
 })
 
 ipcMain.on('delete-address', (event, index) => {
-  fs.readFile('wallets.json', 'utf8', (err: any, readData: any) => {
+  fs.readFile('data.json', 'utf8', (err: any, readData: any) => {
   	if (err) {
   		throw err;
   	}
@@ -82,7 +82,7 @@ ipcMain.on('delete-address', (event, index) => {
       for (let i = 0; i < index.length; i++) {
         walletsObject.wallets.splice(index[i], 1);
       }
-      fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
+      fs.writeFile('data.json', JSON.stringify(walletsObject), (err) => {
       	if (err) {
       		throw err;
       	}
@@ -96,7 +96,7 @@ ipcMain.on('delete-address', (event, index) => {
 
 ipcMain.on('remove-all-wallets', (event) => {
   let walletsObject: any = {"wallets": <any>[]};
-  fs.writeFile('wallets.json', JSON.stringify(walletsObject), (err) => {
+  fs.writeFile('data.json', JSON.stringify(walletsObject), (err) => {
   	if (err) {
   		throw err;
   	}

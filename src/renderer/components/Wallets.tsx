@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-import { createAndStoreWallet, removeWallet, removeAllWallets, getBalance, disperse, consolidate, importAndStoreWallet } from './walletManager';
+import { createAndStoreWallet, removeWallet, removeAllWallets, getBalance, disperse, consolidate, importAndStoreWallet, importAndStoreWalletFromFile } from './walletManager';
 import { FaTrash, FaKey } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai'
 import { BiRefresh } from 'react-icons/bi'
-import wallets from '../../../wallets.json'
+import data from '../../../data.json'
 
 
 
@@ -23,35 +23,35 @@ const Wallets = () => {
   const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
-    if (wallets.wallets.length > 0) {
-      updateWalletBalances(wallets.wallets);
-      setSelectedMainAddress(wallets.wallets[0].address);
-      let result = wallets.wallets.map(a => a.address);
-      let selectedIndex = result.findIndex((element) => element == wallets.wallets[0].address);
-      let selectedPk = wallets.wallets[selectedIndex].privateKey;
+    if (data.wallets.length > 0) {
+      updateWalletBalances();
+      setSelectedMainAddress(data.wallets[0].address);
+      let result = data.wallets.map(a => a.address);
+      let selectedIndex = result.findIndex((element) => element == data.wallets[0].address);
+      let selectedPk = data.wallets[selectedIndex].privateKey;
       setSelectedPk(selectedPk);
     }
   }, []);
 
-  const updateWalletBalances = async (walletsJsonArray) => {
+  const updateWalletBalances = async () => {
     setActiveTransaction(true);
-    setWalletsBalances(await getBalance(walletsJsonArray));
+    setWalletsBalances(await getBalance(data.wallets));
     setActiveTransaction(false);
   }
 
-  const disperseToWallets = async (selected, walletsJsonArray, amount, mainpk) => {
-    if (amount > 0) {
+  const disperseToWallets = async () => {
+    if (amountToDisperse > 0) {
       setActiveTransaction(true);
-      await disperse(selected, walletsJsonArray, amount, mainpk);
-      updateWalletBalances(wallets.wallets);
+      await disperse(walletsSelected, data.wallets, amountToDisperse, selectedPk);
+      updateWalletBalances();
     }
   }
 
-  const consolidateWallets = async (main, selected, walletsJsonArray) => {
+  const consolidateWallets = async () => {
     if (walletsSelected.length > 0) {
       setActiveTransaction(true);
-      await consolidate(main, selected, walletsJsonArray);
-      updateWalletBalances(wallets.wallets);
+      await consolidate(selectedMainAddress, walletsSelected, data.wallets);
+      updateWalletBalances();
     }
   }
 
@@ -88,13 +88,13 @@ const Wallets = () => {
 
   const handleAddressMainSelection = event => {
     setSelectedMainAddress(event.target.value);
-    let result = wallets.wallets.map(a => a.address);
+    let result = data.wallets.map(a => a.address);
     let selectedIndex = result.findIndex((element) => element == event.target.value);
-    let selectedPk = wallets.wallets[selectedIndex].privateKey;
+    let selectedPk = data.wallets[selectedIndex].privateKey;
     setSelectedPk(selectedPk);
   };
 
-  const walletsOptionsList = wallets.wallets.map((addressObject, index: any) =>
+  const walletsOptionsList = data.wallets.map((addressObject, index: any) =>
     <option key={index} className="bg-neutral-800 text-[0.75rem]">{addressObject.address}</option>
   );
 
@@ -129,14 +129,14 @@ const Wallets = () => {
     removeWallet(indexs);
   }
 
-  const handleBatchRemoveWallet = (wallets) => {
+  const handleBatchRemoveWallet = () => {
     setWalletsSelected([]);
-    removeWallet(wallets);
+    removeWallet(walletsSelected);
   }
 
   function saveFile() {
     let element = document.createElement("a");
-    let file = new Blob([JSON.stringify(wallets)], {type: "application/json"});
+    let file = new Blob([JSON.stringify(data)], {type: "application/json"});
     element.href = URL.createObjectURL(file);
     element.download = "mintyExports.json";
     element.click();
@@ -150,7 +150,8 @@ const Wallets = () => {
       reader.addEventListener("load", () => {
         try {
           let data = JSON.parse(reader.result);
-          console.log(data.wallets);
+          importAndStoreWalletFromFile(data);
+          setImportOpen(false);
         } catch (err) {
           console.log(err);
         }
@@ -162,7 +163,7 @@ const Wallets = () => {
     }
   };
 
-  const walletsList = wallets.wallets.map((addressObject, index: any) =>
+  const walletsList = data.wallets.map((addressObject, index: any) =>
     <div onClick={() => selectAddress(index)} key={index} className={walletsSelected.includes(index) ? "flex p-2 bg-gray-400 bg-opacity-50 rounded-lg my-1 mx-2 transition-all" : "flex p-2 bg-gray-500 bg-opacity-50 rounded-lg my-1 mx-2 transition-all"}>
       <div className="grid grid-cols-12 flex-grow gap-5 text-sm">
         <div className="grid col-span-2">{addressObject.name}</div>
@@ -203,21 +204,21 @@ const Wallets = () => {
             {walletsOptionsList}
           </select>
         </form>
-        <div onClick={() => {activeTransaction ? null : disperseToWallets(walletsSelected, wallets.wallets, amountToDisperse, selectedPk)}} className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[80px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[80px] flex"}>
+        <div onClick={() => {activeTransaction ? null : disperseToWallets()}} className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[80px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[80px] flex"}>
           {!activeTransaction ? (
             <div className="m-auto">Disperse</div>
           ):(
             <AiOutlineLoading3Quarters className='animate-spin m-auto'/>
           )}
         </div>
-        <div onClick={() => {activeTransaction ? null : consolidateWallets(selectedMainAddress, walletsSelected, wallets.wallets)}} className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[100px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[100px] flex"}>
+        <div onClick={() => {activeTransaction ? null : consolidateWallets()}} className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[100px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[100px] flex"}>
           {!activeTransaction ? (
             <div className="m-auto">Consolidate</div>
           ):(
             <AiOutlineLoading3Quarters className='animate-spin m-auto'/>
           )}
         </div>
-        <div onClick={() => {activeTransaction ? null : updateWalletBalances(wallets.wallets)}} className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[50px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[50px] flex"}>
+        <div onClick={() => {activeTransaction ? null : updateWalletBalances()}} className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[50px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[50px] flex"}>
           {!activeTransaction ? (
             <div className="m-auto text-2xl"><BiRefresh/></div>
           ):(
@@ -242,7 +243,7 @@ const Wallets = () => {
         <div className="grow">
           <div onClick={() => setCreateOpen(true)} className="bg-green-500 hover:bg-green-400 active:bg-green-600 py-2 w-20 text-center transition-all cursor-pointer rounded-xl">Create</div>
         </div>
-        <div onClick={() => handleBatchRemoveWallet(walletsSelected)} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-10 text-center transition-all cursor-pointer rounded-xl flex"><FaTrash className="m-auto"/></div>
+        <div onClick={() => handleBatchRemoveWallet()} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-10 text-center transition-all cursor-pointer rounded-xl flex"><FaTrash className="m-auto"/></div>
         <div onClick={() => setDeleteAllOpen(true)} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Delete All</div>
       </div>
       {createOpen ? (

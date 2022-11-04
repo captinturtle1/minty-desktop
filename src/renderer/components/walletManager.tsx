@@ -28,11 +28,9 @@ export function createAndStoreWallet(name: string, amount: number) {
 }
 
 export function importAndStoreWallet(name: string, pkString) {
-	console.log(pkString);
+	console.log("importingFromString");
 	let noSpace = pkString.replace(/\s+/g, '');
-	console.log(noSpace);
 	let pkArray = noSpace.split(",");
-	console.log(pkArray);
 	let walletArray: any = [];
 	for (let i = 0; i < pkArray.length; i++) {
 		if (!/^0x[a-fA-F0-9]{64}$/.test(pkArray[i])) {
@@ -58,6 +56,23 @@ export function importAndStoreWallet(name: string, pkString) {
 	}
 	window.electron.ipcRenderer.writeAddress(walletArray);
 	return true;
+}
+
+export function importAndStoreWalletFromFile(data) {
+	if (data.wallets != undefined) {
+		if (data.wallets.length > 0) {
+			let walletArray: any = [];
+			for (let i = 0; i < data.wallets.length; i++) {
+				walletArray.push(data.wallets[i]);
+			}
+			window.electron.ipcRenderer.writeAddress(walletArray);
+			return true;
+		} else {
+			return false;
+		}
+	} else {
+		return false;
+	}
 }
 
 export function removeWallet(index) {
