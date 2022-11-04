@@ -24,7 +24,6 @@ const Wallets = () => {
 
   useEffect(() => {
     if (data.wallets.length > 0) {
-      updateWalletBalances();
       setSelectedMainAddress(data.wallets[0].address);
       let result = data.wallets.map(a => a.address);
       let selectedIndex = result.findIndex((element) => element == data.wallets[0].address);

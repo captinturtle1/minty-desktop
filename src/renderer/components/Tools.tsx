@@ -7,9 +7,10 @@ const Tools = () => {
   const [legacyGwei, setLegacyGwei] = useState<number>();
   const [legacyLimit, setLegacyLimit] = useState<number>();
 
-  const [legacyTable, setLegacyTable] = useState();
+  //const [legacyTable, setLegacyTable] = useState();
   const [legacyOutput, setLegacyOutput] = useState<number>();
-  const [eip1559Table, seteip1559Table] = useState();
+  
+  //const [eip1559Table, seteip1559Table] = useState();
   const [eip1559OutputMin, seteip1559OutputMin] = useState<any>();
   const [eip1559OutputMax, seteip1559OutputMax] = useState<any>();
 
@@ -83,6 +84,7 @@ const Tools = () => {
   return (
     <div className="text-white px-8 pt-8 h-full flex flex-col">
       <div className="text-3xl font-semibold">Tools</div>
+      <div className="h-1 w-full bg-gray-500 mt-3 rounded-full mb-5"/>
       <div className="flex gap-16">
         <div>
           <div className="text-xl font-semibold my-3">Calculate eip1559</div>
@@ -112,7 +114,7 @@ const Tools = () => {
               />
             </form>
           </div>
-          <div className="text-xl font-semibold my-3">Output</div>
+          <div className="text-xl font-semibold my-3">Output:</div>
           <div className="flex flex-col">
             <div>max: {eip1559OutputMax}</div>
             <div>min: {eip1559OutputMin}</div>
@@ -138,7 +140,7 @@ const Tools = () => {
               />
             </form>
           </div>
-          <div className="text-xl font-semibold my-3">Output</div>
+          <div className="text-xl font-semibold my-3">Output:</div>
           <div className="flex flex-col">
             <div>cost: {legacyOutput}</div>
           </div>

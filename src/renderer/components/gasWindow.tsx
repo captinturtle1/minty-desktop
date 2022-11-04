@@ -29,7 +29,7 @@ const gasWindow = () => {
     }
 
   return (
-    <div className="absolute bottom-5 left-5 right-5 bg-slate-400 drop-shadow-lg rounded-xl grid grid-cols-2 gap-1 p-5 font-bold text-sm">
+    <div className="absolute bottom-5 left-5 right-5 bg-slate-700 text-slate-300 text-sm drop-shadow-lg rounded-xl grid grid-cols-2 gap-1 p-5">
       <div>
         gasPrice:
       </div>
