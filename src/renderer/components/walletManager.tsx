@@ -28,34 +28,39 @@ export function createAndStoreWallet(name: string, amount: number) {
 }
 
 export function importAndStoreWallet(name: string, pkString) {
-	console.log("importingFromString");
-	let noSpace = pkString.replace(/\s+/g, '');
-	let pkArray = noSpace.split(",");
-	let walletArray: any = [];
-	for (let i = 0; i < pkArray.length; i++) {
-		if (!/^0x[a-fA-F0-9]{64}$/.test(pkArray[i])) {
-			console.log(pkArray[i], "not a pk");
-			return false;
-        }
-		let newWalletData: any;
-		let newwallet = new ethers.Wallet(pkArray[i]);
-		if (pkArray.length > 0) {
-			newWalletData = {
-				"name": `${name}${i + 1}`,
-				"address": newwallet.address,
-				"privateKey": newwallet.privateKey
+	try {
+		console.log("importingFromString");
+		let noSpace = pkString.replace(/\s+/g, '');
+		let pkArray = noSpace.split(",");
+		let walletArray: any = [];
+		for (let i = 0; i < pkArray.length; i++) {
+			if (!/^0x[a-fA-F0-9]{64}$/.test(pkArray[i])) {
+				console.log(pkArray[i], "not a pk");
+				return false;
+    	    }
+			let newWalletData: any;
+			let newwallet = new ethers.Wallet(pkArray[i]);
+			if (pkArray.length > 0) {
+				newWalletData = {
+					"name": `${name}${i + 1}`,
+					"address": newwallet.address,
+					"privateKey": newwallet.privateKey
+				}
+			} else {
+				newWalletData = {
+					"name": name,
+					"address": newwallet.address,
+					"privateKey": newwallet.privateKey
+				}
 			}
-		} else {
-			newWalletData = {
-				"name": name,
-				"address": newwallet.address,
-				"privateKey": newwallet.privateKey
-			}
+			walletArray.push(newWalletData);
 		}
-		walletArray.push(newWalletData);
+		window.electron.ipcRenderer.writeAddress(walletArray);
+		return true;
+	} catch (err) {
+		console.log(err);
+		return false
 	}
-	window.electron.ipcRenderer.writeAddress(walletArray);
-	return true;
 }
 
 export function importAndStoreWalletFromFile(data) {

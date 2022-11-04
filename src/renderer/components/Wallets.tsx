@@ -245,87 +245,69 @@ const Wallets = () => {
         <div onClick={() => handleBatchRemoveWallet()} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-10 text-center transition-all cursor-pointer rounded-xl flex"><FaTrash className="m-auto"/></div>
         <div onClick={() => setDeleteAllOpen(true)} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Delete All</div>
       </div>
-      {createOpen ? (
-        <>
-          <div onClick={() => setCreateOpen(false)} className="absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex">
-            <div onClick={(e) => onClickStopPropagation(e)} className="bg-slate-900 px-16 py-8 rounded-lg m-auto relative flex flex-col gap-3">
-              <div className="font-bold m-auto">Create Wallets</div>
-              <div className="flex gap-2">
-                <form className="flex gap-3 text-[0.75rem]">
-                  <input
-                    value={createWalletName}
-                    type="text"
-                    onChange={handleWalletNameChange}
-                    placeholder="name"
-                    className="w-24 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
-                  />
-                </form>
-                <form className="flex gap-3 text-[0.75rem]">
-                  <input
-                    value={createWalletAmount}
-                    type='number'
-                    onChange={handleWalletAmountChange}
-                    placeholder="#"
-                    className="w-10 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
-                  />
-                </form>
-              </div>
-              <div onClick={() => {createAndStoreWallet(createWalletName, createWalletAmount), setCreateOpen(false)}} className="bg-green-500 hover:bg-green-400 active:bg-green-600 py-2 w-20 text-center transition-all cursor-pointer rounded-xl m-auto">Create</div>
-            </div>
-          </div>
-        </>
-      ):(
-        <></>
-      )}
-      {deleteAllOpen ? (
-        <>
-          <div onClick={() => setDeleteAllOpen(false)} className="absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex">
-            <div onClick={(e) => onClickStopPropagation(e)} className="bg-slate-900 px-16 py-8 rounded-lg m-auto relative">
-              <div>Are you sure?</div>
-              <div onClick={() => {removeAllWallets(), setDeleteAllOpen(false)}} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl mt-5">Delete All</div>
-            </div>
-          </div>
-        </>
-      ):(
-        <></>
-      )}
-      {importOpen ? (
-        <>
-          <div onClick={() => setImportOpen(false)} className="absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex">
-            <div onClick={(e) => onClickStopPropagation(e)} className="bg-slate-900 px-16 py-8 rounded-lg m-auto relative flex flex-col">
-              <form className="mb-2 flex gap-3 text-[0.75rem]">
-                <input
-                  value={importWalletName}
-                  type="text"
-                  onChange={handleImportNameChange}
-                  placeholder="name"
-                  className="w-24 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
-                />
-              </form>
-              <textarea
-                value={importInput}
-                onChange={handleImportBoxChange}
-                placeholder="privatekey1, privatekey2, privatekey3, privatekey4, privatekey5..."
-                className="p-2 w-[500px] h-64 focus:outline-none rounded-lg bg-neutral-800 resize-none"
+      <div onClick={() => setCreateOpen(false)} className={createOpen ? "absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex transition-all opacity-100 visible" : "absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex transition-all opacity-0 invisible"}>
+        <div onClick={(e) => onClickStopPropagation(e)} className="bg-slate-900 px-16 py-8 rounded-lg m-auto relative flex flex-col gap-3">
+          <div className="font-bold m-auto">Create Wallets</div>
+          <div className="flex gap-2">
+            <form className="flex gap-3 text-[0.75rem]">
+              <input
+                value={createWalletName}
+                type="text"
+                onChange={handleWalletNameChange}
+                placeholder="name"
+                className="w-24 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
               />
-              <div className="flex gap-5 mt-5">
-                <div onClick={() => {importAndStoreWallet(importWalletName, importInput), setImportOpen(false), setImportInput(""), setImportWalletName("");}} className="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Import Keys</div>
-                <div className="m-auto font-bold">or</div>
-                <form className="m-auto">
-                  <input
-                    type="file"
-                    accept="application/json"
-                    onChange={handleFileInput}
-                    className="file:bg-orange-500 file:hover:bg-orange-400 file:active:bg-orange-600 file:py-2 file:w-24 file:text-center file:transition-all file:cursor-pointer file:rounded-xl file:text-white file:border-0"
-                  />
-                </form>
-              </div>
-            </div>
+            </form>
+            <form className="flex gap-3 text-[0.75rem]">
+              <input
+                value={createWalletAmount}
+                type='number'
+                onChange={handleWalletAmountChange}
+                placeholder="#"
+                className="w-10 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
+              />
+            </form>
           </div>
-        </>
-      ):(
-        <></>
-      )}
+          <div onClick={() => {createAndStoreWallet(createWalletName, createWalletAmount), setCreateOpen(false)}} className="bg-green-500 hover:bg-green-400 active:bg-green-600 py-2 w-20 text-center transition-all cursor-pointer rounded-xl m-auto">Create</div>
+        </div>
+      </div>
+      <div onClick={() => setDeleteAllOpen(false)} className={deleteAllOpen ? "absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex transition-all opacity-100 visible" : "absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex transition-all opacity-0 invisible"}>
+        <div onClick={(e) => onClickStopPropagation(e)} className="bg-slate-900 px-16 py-8 rounded-lg m-auto relative">
+          <div>Are you sure?</div>
+          <div onClick={() => {removeAllWallets(), setDeleteAllOpen(false)}} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl mt-5">Delete All</div>
+        </div>
+      </div>
+      <div onClick={() => setImportOpen(false)} className={importOpen ? "absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex transition-all opacity-100 visible" : "absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex transition-all opacity-0 invisible"}>
+        <div onClick={(e) => onClickStopPropagation(e)} className="bg-slate-900 px-16 py-8 rounded-lg m-auto relative flex flex-col">
+          <form className="mb-2 flex gap-3 text-[0.75rem]">
+            <input
+              value={importWalletName}
+              type="text"
+              onChange={handleImportNameChange}
+              placeholder="name"
+              className="w-24 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
+            />
+          </form>
+          <textarea
+            value={importInput}
+            onChange={handleImportBoxChange}
+            placeholder="privatekey1, privatekey2, privatekey3, privatekey4, privatekey5..."
+            className="p-2 w-[500px] h-64 focus:outline-none rounded-lg bg-neutral-800 resize-none"
+          />
+          <div className="flex gap-5 mt-5">
+            <div onClick={() => {importAndStoreWallet(importWalletName, importInput), setImportOpen(false), setImportInput(""), setImportWalletName("");}} className="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Import Keys</div>
+            <div className="m-auto font-bold">or</div>
+            <form className="m-auto">
+              <input
+                type="file"
+                accept="application/json"
+                onChange={handleFileInput}
+                className="file:bg-orange-500 file:hover:bg-orange-400 file:active:bg-orange-600 file:py-2 file:w-24 file:text-center file:transition-all file:cursor-pointer file:rounded-xl file:text-white file:border-0"
+              />
+            </form>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
