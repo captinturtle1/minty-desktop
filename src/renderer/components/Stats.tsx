@@ -1,10 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { check_profit } from './functionalStuff/profitCheck';
-import data from '../../../wallets.json'
+
+async function getWallets() {
+	return await window.electron.ipcRenderer.getWallets();
+}
 
 const Stats = () => {
+  const [wallets, setWallets] = useState<any>([]);
+
   const [contract, setContract] = useState<string>();
   const [results, setResults] = useState<any>([]);
+
+  useEffect(() => {
+    getData();
+  }, []);
+
+  const getData = async () => {
+    getWallets().then((response:any) => {
+      console.log(wallets);
+      setWallets([...JSON.parse(response).wallets]);
+    console.log(wallets);
+    });
+  }
 
   const handleLegacyGweiChange = event => {
     setContract(event.target.value);
@@ -12,8 +29,8 @@ const Stats = () => {
 
   const submitCheckProfit = async () => {
     let arrayOfAddresses:string[] = [];
-    for (let i = 0; i < data.wallets.length; i++) {
-      arrayOfAddresses.push(data.wallets[i].address);
+    for (let i = 0; i < wallets.length; i++) {
+      arrayOfAddresses.push(wallets[i].address);
     }
     
     let result:any = await check_profit(contract, arrayOfAddresses);
