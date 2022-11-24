@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { check_profit } from './profitCheck';
-import data from '../../../data.json'
+import { check_profit } from './functionalStuff/profitCheck';
+import data from '../../../wallets.json'
 
 const Stats = () => {
   const [contract, setContract] = useState<string>();

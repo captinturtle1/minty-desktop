@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
-import { createAndStoreWallet, removeWallet, removeAllWallets, getBalance, disperse, consolidate, importAndStoreWallet, importAndStoreWalletFromFile } from './walletManager';
+import { createAndStoreWallet, removeWallet, getBalance, disperse, consolidate, importAndStoreWallet, importAndStoreWalletFromFile, getWallets } from './functionalStuff/walletManager';
 import { FaTrash, FaKey } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai'
 import { BiRefresh } from 'react-icons/bi'
-import data from '../../../data.json'
-
-
 
 const Wallets = () => {
+  const [wallets, setWallets] = useState<any>([]);
+
   const [createWalletName, setCreateWalletName] = useState('');
   const [importWalletName, setImportWalletName] = useState('');
   const [createWalletAmount, setCreateWalletAmount] = useState<number>(1);
@@ -23,25 +22,34 @@ const Wallets = () => {
   const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
-    if (data.wallets.length > 0) {
-      setSelectedMainAddress(data.wallets[0].address);
-      let result = data.wallets.map(a => a.address);
-      let selectedIndex = result.findIndex((element) => element == data.wallets[0].address);
-      let selectedPk = data.wallets[selectedIndex].privateKey;
+    if (wallets.length > 0) {
+      setSelectedMainAddress(wallets[0].address);
+      let result = wallets.map(a => a.address);
+      let selectedIndex = result.findIndex((element) => element == wallets[0].address);
+      let selectedPk = wallets[selectedIndex].privateKey;
       setSelectedPk(selectedPk);
     }
+    getData();
   }, []);
+
+  const getData = async () => {
+    getWallets().then((response:any) => {
+      console.log(wallets);
+      setWallets([...JSON.parse(response).wallets]);
+    console.log(wallets);
+    });
+  }
 
   const updateWalletBalances = async () => {
     setActiveTransaction(true);
-    setWalletsBalances(await getBalance(data.wallets));
+    setWalletsBalances(await getBalance(wallets));
     setActiveTransaction(false);
   }
 
   const disperseToWallets = async () => {
     if (amountToDisperse > 0) {
       setActiveTransaction(true);
-      await disperse(walletsSelected, data.wallets, amountToDisperse, selectedPk);
+      await disperse(walletsSelected, wallets, amountToDisperse, selectedPk);
       updateWalletBalances();
     }
   }
@@ -49,10 +57,51 @@ const Wallets = () => {
   const consolidateWallets = async () => {
     if (walletsSelected.length > 0) {
       setActiveTransaction(true);
-      await consolidate(selectedMainAddress, walletsSelected, data.wallets);
+      await consolidate(selectedMainAddress, walletsSelected, wallets);
       updateWalletBalances();
     }
   }
+
+  const handleRemoveWallet = async (e, index) => {
+    e.stopPropagation();
+    setWalletsSelected([...[]]);
+    let indexs:number[] = [];
+    indexs[0] = index;
+    removeWallet(indexs).then((response:any) => {
+      setWallets([...JSON.parse(response).wallets]);
+    }).catch(console.log);
+  }
+
+  const handleBatchRemoveWallet = () => {
+    setWalletsSelected([...[]]);
+    removeWallet(walletsSelected).then((response:any) => {
+      setWallets([...JSON.parse(response).wallets]);
+    }).catch(console.log);
+  }
+
+  const handleRemoveAllWallets = () => {
+    let allWalletIndex:number[] = [];
+    for (let i = 0; i < wallets.length; i++) {
+      allWalletIndex.push(i);
+    }
+    removeWallet(allWalletIndex).then((response:any) => {
+      setWallets([...JSON.parse(response).wallets]);
+    }).catch(console.log);
+  }
+
+  const handleCreateAndStoreWallet = () => {
+    createAndStoreWallet(createWalletName, createWalletAmount).then((response:any) => {
+      setWallets([...JSON.parse(response).wallets]);
+    }).catch(console.log);
+  }
+
+  const handleimportAndStoreWallet = () => {
+    importAndStoreWallet(importWalletName, importInput).then((response:any) => {
+      setWallets([...JSON.parse(response).wallets]);
+    }).catch(console.log);
+  }
+
+
 
   const handleWalletNameChange = event => {
     let limit = 12;
@@ -87,15 +136,13 @@ const Wallets = () => {
 
   const handleAddressMainSelection = event => {
     setSelectedMainAddress(event.target.value);
-    let result = data.wallets.map(a => a.address);
+    let result = wallets.map(a => a.address);
     let selectedIndex = result.findIndex((element) => element == event.target.value);
-    let selectedPk = data.wallets[selectedIndex].privateKey;
+    let selectedPk = wallets[selectedIndex].privateKey;
     setSelectedPk(selectedPk);
   };
 
-  const walletsOptionsList = data.wallets.map((addressObject, index: any) =>
-    <option key={index} className="bg-neutral-800 text-[0.75rem]">{addressObject.address}</option>
-  );
+  
 
   const selectAddress = (addressIndex) => {
     let walletSelectedArray: any = [];
@@ -120,22 +167,11 @@ const Wallets = () => {
     navigator.clipboard.writeText(pk);
   }
 
-  const handleRemoveWallet = (e, index) => {
-    e.stopPropagation();
-    setWalletsSelected([]);
-    let indexs:number[] = [];
-    indexs[0] = index;
-    removeWallet(indexs);
-  }
-
-  const handleBatchRemoveWallet = () => {
-    setWalletsSelected([]);
-    removeWallet(walletsSelected);
-  }
-
   function saveFile() {
     let element = document.createElement("a");
-    let file = new Blob([JSON.stringify(data)], {type: "application/json"});
+    let walletsObject:any = {"wallets": []};
+    walletsObject.wallets.push(wallets);
+    let file = new Blob([JSON.stringify(walletsObject)], {type: "application/json"});
     element.href = URL.createObjectURL(file);
     element.download = "mintyExports.json";
     element.click();
@@ -149,7 +185,9 @@ const Wallets = () => {
       reader.addEventListener("load", () => {
         try {
           let data = JSON.parse(reader.result);
-          importAndStoreWalletFromFile(data);
+          importAndStoreWalletFromFile(data).then(response => {
+            setWallets(response);
+          }).catch(console.log);
           setImportOpen(false);
         } catch (err) {
           console.log(err);
@@ -162,7 +200,11 @@ const Wallets = () => {
     }
   };
 
-  const walletsList = data.wallets.map((addressObject, index: any) =>
+  const walletsOptionsList = wallets.map((addressObject, index: any) =>
+    <option key={index} className="bg-neutral-800 text-[0.75rem]">{addressObject.address}</option>
+  );
+
+  const walletsList = wallets.map((addressObject, index: any) =>
     <div onClick={() => selectAddress(index)} key={index} className={walletsSelected.includes(index) ? "flex p-2 bg-gray-400 bg-opacity-50 rounded-lg my-1 mx-2 transition-all" : "flex p-2 bg-gray-500 bg-opacity-50 rounded-lg my-1 mx-2 transition-all"}>
       <div className="grid grid-cols-12 flex-grow gap-5 text-sm">
         <div className="grid col-span-2">{addressObject.name}</div>
@@ -268,13 +310,13 @@ const Wallets = () => {
               />
             </form>
           </div>
-          <div onClick={() => {createAndStoreWallet(createWalletName, createWalletAmount), setCreateOpen(false)}} className="bg-green-500 hover:bg-green-400 active:bg-green-600 py-2 w-20 text-center transition-all cursor-pointer rounded-xl m-auto">Create</div>
+          <div onClick={() => {handleCreateAndStoreWallet(), setCreateOpen(false)}} className="bg-green-500 hover:bg-green-400 active:bg-green-600 py-2 w-20 text-center transition-all cursor-pointer rounded-xl m-auto">Create</div>
         </div>
       </div>
       <div onClick={() => setDeleteAllOpen(false)} className={deleteAllOpen ? "absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex transition-all opacity-100 visible" : "absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex transition-all opacity-0 invisible"}>
         <div onClick={(e) => onClickStopPropagation(e)} className="bg-slate-900 px-16 py-8 rounded-lg m-auto relative">
           <div>Are you sure?</div>
-          <div onClick={() => {removeAllWallets(), setDeleteAllOpen(false)}} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl mt-5">Delete All</div>
+          <div onClick={() => {handleRemoveAllWallets(), setDeleteAllOpen(false)}} className="bg-red-500 hover:bg-red-400 active:bg-red-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl mt-5">Delete All</div>
         </div>
       </div>
       <div onClick={() => setImportOpen(false)} className={importOpen ? "absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex transition-all opacity-100 visible" : "absolute left-0 top-0 w-screen h-screen bg-zinc-900 bg-opacity-50 backdrop-blur-sm flex transition-all opacity-0 invisible"}>
@@ -295,7 +337,7 @@ const Wallets = () => {
             className="p-2 w-[500px] h-64 focus:outline-none rounded-lg bg-neutral-800 resize-none"
           />
           <div className="flex gap-5 mt-5">
-            <div onClick={() => {importAndStoreWallet(importWalletName, importInput), setImportOpen(false), setImportInput(""), setImportWalletName("");}} className="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Import Keys</div>
+            <div onClick={() => {handleimportAndStoreWallet(), setImportOpen(false), setImportInput(""), setImportWalletName("");}} className="bg-orange-500 hover:bg-orange-400 active:bg-orange-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Import Keys</div>
             <div className="m-auto font-bold">or</div>
             <form className="m-auto">
               <input

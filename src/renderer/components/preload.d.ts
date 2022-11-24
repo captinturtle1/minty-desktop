@@ -4,6 +4,10 @@ declare global {
   interface Window {
     electron: {
       ipcRenderer: {
+        getPath(): unknown;
+		    getTasks(): unknown;
+        getWallets(): unknown;
+        initDataFiles(): unknown;
 		    writeAddress(data: any): unknown;
         deleteAddress(data: number[]): unknown;
         removeAllWallets(): unknown;

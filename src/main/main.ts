@@ -33,75 +33,102 @@ ipcMain.on('ipc-example', async (event, arg) => {
   event.reply('ipc-example', msgTemplate('pong'));
 });
 
-ipcMain.on('write-address', (event, data) => {
-  fs.readFile('data.json', 'utf8', (err: any, readData: any) => {
-  	if (err) {
-  		throw err;
-  	}
+ipcMain.handle('get-tasks', () => {
+  return new Promise(async (resolve, reject) => {
+    fs.readFile(`${app.getPath("userData")}\\tasks.json`, 'utf8', (err: any, readData: any) => {
+      if (err) {
+        console.log("No tasks.json");
+        let tasksObject: any = {"tasks": []};
 
-    let walletsObject: any = {"wallets": <any>[]};
-
-    if (readData !== '') {
-      let readDataParsed = JSON.parse(readData);
-      walletsObject.wallets = readDataParsed.wallets
-      let newArray = walletsObject.wallets.concat(data);
-      walletsObject.wallets = newArray;
-      fs.writeFile('data.json', JSON.stringify(walletsObject), (err) => {
-        if (err) {
-          throw err;
-        }
-      });
-    } else {
-      let newArray = walletsObject.wallets.concat(data);
-      walletsObject.wallets = newArray;
-      fs.writeFile('data.json', JSON.stringify(walletsObject), (err) => {
-      	if (err) {
-      		throw err;
-      	}
-      });
-    }
-  });
-  event.reply('write-address', 'done');
-})
-
-ipcMain.on('delete-address', (event, index) => {
-  fs.readFile('data.json', 'utf8', (err: any, readData: any) => {
-  	if (err) {
-  		throw err;
-  	}
-
-    const compareNumbers = (a, b) => {
-      return b - a;
-    }
-
-    if (readData !== '') {
-      let walletsObject: any = {"wallets": <any>[]};
-      let readDataParsed = JSON.parse(readData);
-      walletsObject.wallets = readDataParsed.wallets
-      index.sort(compareNumbers);
-      for (let i = 0; i < index.length; i++) {
-        walletsObject.wallets.splice(index[i], 1);
+        fs.writeFile(`${app.getPath("userData")}\\tasks.json`, JSON.stringify(tasksObject), (err, ) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(JSON.stringify(tasksObject));
+          }
+        });
+      } else {
+        resolve(readData);
       }
-      fs.writeFile('data.json', JSON.stringify(walletsObject), (err) => {
-      	if (err) {
-      		throw err;
-      	}
-      });
-    } else {
-      console.log('no data');
-    }
+    });
   });
-  event.reply('delete-address', 'done');
+});
+
+ipcMain.handle('get-wallets', () => {
+  return new Promise(async (resolve, reject) => {
+    fs.readFile(`${app.getPath("userData")}\\wallets.json`, 'utf8', (err: any, readData: any) => {
+      if (err) {
+        console.log("No wallets.json");
+        let walletsObject: any = {"wallets": []};
+
+        fs.writeFile(`${app.getPath("userData")}\\wallets.json`, JSON.stringify(walletsObject), (err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(JSON.stringify(walletsObject));
+          }
+        });
+      } else {
+        resolve(readData);
+      }
+    });
+  });
+});
+
+ipcMain.handle('write-address', (event, data) => {
+  return new Promise(async (resolve, reject) => {
+    fs.readFile(`${app.getPath("userData")}\\wallets.json`, 'utf8', (err: any, readData: any) => {
+    	if (err) {
+    		reject(err);
+    	} else {
+        let walletsObject: any = {"wallets": []};
+        let readDataParsed = JSON.parse(readData);
+
+        walletsObject.wallets = readDataParsed.wallets
+        let newArray = walletsObject.wallets.concat(data);
+        walletsObject.wallets = newArray;
+
+        fs.writeFile(`${app.getPath("userData")}\\wallets.json`, JSON.stringify(walletsObject), (err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(JSON.stringify(walletsObject));
+          }
+        });
+      }
+    });
+  });
 })
 
-ipcMain.on('remove-all-wallets', (event) => {
-  let walletsObject: any = {"wallets": <any>[]};
-  fs.writeFile('data.json', JSON.stringify(walletsObject), (err) => {
-  	if (err) {
-  		throw err;
-  	}
+ipcMain.handle('delete-address', (event, index) => {
+  return new Promise(async (resolve, reject) => {
+    fs.readFile(`${app.getPath("userData")}\\wallets.json`, 'utf8', (err: any, readData: any) => {
+    	if (err) {
+    		reject(err);
+    	} else {
+        const compareNumbers = (a, b) => {
+          return b - a;
+        }
+
+        let walletsObject: any = {"wallets": []};
+        let readDataParsed = JSON.parse(readData);
+        walletsObject.wallets = readDataParsed.wallets
+        index.sort(compareNumbers);
+
+        for (let i = 0; i < index.length; i++) {
+          walletsObject.wallets.splice(index[i], 1);
+        }
+
+        fs.writeFile(`${app.getPath("userData")}\\wallets.json`, JSON.stringify(walletsObject), (err) => {
+        	if (err) {
+        		reject(err);
+        	} else {
+            resolve(JSON.stringify(walletsObject));
+          }
+        });
+      }
+    });
   });
-  event.reply('remove-all-wallets', 'done');
 })
 
 if (process.env.NODE_ENV === 'production') {

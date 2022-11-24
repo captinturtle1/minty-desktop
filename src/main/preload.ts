@@ -4,8 +4,11 @@ export type Channels = 'ipc-example';
 
 contextBridge.exposeInMainWorld('electron', {
   ipcRenderer: {
-    writeAddress: (address: any) => ipcRenderer.send('write-address', address),
-    deleteAddress: (index: number[]) => ipcRenderer.send('delete-address', index),
+    getTasks: () => ipcRenderer.invoke('get-tasks'),
+    getWallets: () => ipcRenderer.invoke('get-wallets'),
+    initDataFiles: () => ipcRenderer.send('init-data'),
+    writeAddress: (address: any) => ipcRenderer.invoke('write-address', address),
+    deleteAddress: (index: number[]) => ipcRenderer.invoke('delete-address', index),
     removeAllWallets: () => ipcRenderer.send('remove-all-wallets'),
     sendMessage(channel: Channels, args: unknown[]) {
       ipcRenderer.send(channel, args);
