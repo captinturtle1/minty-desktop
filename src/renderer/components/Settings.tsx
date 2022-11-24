@@ -1,4 +1,5 @@
 import { useState, useEffect} from 'react';
+import { ethers } from 'ethers';
 
 async function getSettings() {
 	return await window.electron.ipcRenderer.getSettings();
@@ -12,6 +13,8 @@ const Settings = () => {
   const [rpc, setRpc] = useState<string>("");
   const [webhook, setWebhook] = useState<string>("");
   const [theme, setTheme] = useState<string>("");
+
+  const [rpcTest, setRpcTest] = useState<any>();
 
   useEffect(() => {
     getData();
@@ -49,11 +52,29 @@ const Settings = () => {
     setTheme(event.target.value);
   }
 
-  const testRpc = () => {
-    console.log("Test RPC");
+  const testRpc = async () => {
+    try {
+      console.log("Test RPC: ", rpc);
+      let provider = ethers.providers.getDefaultProvider(rpc);
+      console.log(await provider.getNetwork());
+      setRpcTest(true);
+    } catch (err) {
+      console.log(err);
+      setRpcTest(false);
+    }
   }
 
   const testWebhook = () => {
+    let request = new XMLHttpRequest();
+    request.open("POST", webhook);
+    request.setRequestHeader('Content-type', 'application/json');
+    let params = {
+      username: "Minty",
+      avatar_url: "https://i.kym-cdn.com/entries/icons/original/000/037/848/cover2.jpg",
+      content: "Minty test!"
+    };
+    request.send(JSON.stringify(params));
+  
     console.log("Test Webhook");
   }
 
@@ -74,6 +95,9 @@ const Settings = () => {
             />
           </form>
           <div onClick={testRpc} className="bg-sky-500 hover:bg-sky-400 active:bg-sky-600 w-16 p-1 text-center text-sm transition-all cursor-pointer rounded-xl">Test</div>
+          {rpcTest !== undefined ? (
+            <div className={rpcTest ? "bg-green-500 w-16 p-1 text-center text-sm transition-all rounded-xl" : "bg-red-500 w-16 p-1 text-center text-sm transition-all rounded-xl"}>{rpcTest ? (<>Good</>):(<>Bad</>)}</div>
+          ):(<></>)}
         </div>
         <div className="flex gap-5">
           <div className="w-32">Webhook:</div>
