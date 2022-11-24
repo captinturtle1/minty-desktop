@@ -40,6 +40,72 @@ const Wallets = () => {
     });
   }
 
+  const handleRemoveWallet = async (e, index) => {
+    e.stopPropagation();
+    setWalletsSelected([...[]]);
+    let indexs:number[] = [];
+    indexs[0] = index;
+    removeWallet(indexs).then((response:any) => {
+      setWallets([...JSON.parse(response).wallets]);
+    }).catch(console.log);
+  }
+
+  const handleBatchRemoveWallet = () => {
+    setWalletsSelected([...[]]);
+    removeWallet(walletsSelected).then((response:any) => {
+      setWallets([...JSON.parse(response).wallets]);
+    }).catch(console.log);
+  }
+
+  const handleRemoveAllWallets = () => {
+    setWalletsSelected([...[]]);
+    let allWalletIndex:number[] = [];
+    for (let i = 0; i < wallets.length; i++) {
+      allWalletIndex.push(i);
+    }
+    removeWallet(allWalletIndex).then((response:any) => {
+      setWallets([...JSON.parse(response).wallets]);
+    }).catch(console.log);
+  }
+
+  const handleCreateAndStoreWallet = () => {
+    setWalletsSelected([...[]]);
+    createAndStoreWallet(createWalletName, createWalletAmount).then((response:any) => {
+      setWallets([...JSON.parse(response).wallets]);
+    }).catch(console.log);
+  }
+
+  const handleimportAndStoreWallet = () => {
+    setWalletsSelected([...[]]);
+    importAndStoreWallet(importWalletName, importInput).then((response:any) => {
+      setWallets([...JSON.parse(response).wallets]);
+    }).catch(console.log);
+  }
+
+  const handleFileInput = (e) => {
+    if (e.target != null) {
+      setWalletsSelected([...[]]);
+      let file = (e.target as any).files[0];
+      let reader:any = new FileReader();
+
+      reader.addEventListener("load", () => {
+        try {
+          let data = JSON.parse(reader.result);
+          importAndStoreWalletFromFile(data).then((response:any) => {
+            setWallets([...JSON.parse(response).wallets]);
+          }).catch(console.log);
+          setImportOpen(false);
+        } catch (err) {
+          console.log(err);
+        }
+      }, false);
+      
+      if (file.type == "application/json") {
+        reader.readAsText(file);
+      }
+    }
+  };
+
   const updateWalletBalances = async () => {
     setActiveTransaction(true);
     setWalletsBalances(await getBalance(wallets));
@@ -62,50 +128,21 @@ const Wallets = () => {
     }
   }
 
-  const handleRemoveWallet = async (e, index) => {
-    e.stopPropagation();
-    setWalletsSelected([...[]]);
-    let indexs:number[] = [];
-    indexs[0] = index;
-    removeWallet(indexs).then((response:any) => {
-      setWallets([...JSON.parse(response).wallets]);
-    }).catch(console.log);
-  }
-
-  const handleBatchRemoveWallet = () => {
-    setWalletsSelected([...[]]);
-    removeWallet(walletsSelected).then((response:any) => {
-      setWallets([...JSON.parse(response).wallets]);
-    }).catch(console.log);
-  }
-
-  const handleRemoveAllWallets = () => {
-    let allWalletIndex:number[] = [];
-    for (let i = 0; i < wallets.length; i++) {
-      allWalletIndex.push(i);
-    }
-    removeWallet(allWalletIndex).then((response:any) => {
-      setWallets([...JSON.parse(response).wallets]);
-    }).catch(console.log);
-  }
-
-  const handleCreateAndStoreWallet = () => {
-    createAndStoreWallet(createWalletName, createWalletAmount).then((response:any) => {
-      setWallets([...JSON.parse(response).wallets]);
-    }).catch(console.log);
-  }
-
-  const handleimportAndStoreWallet = () => {
-    importAndStoreWallet(importWalletName, importInput).then((response:any) => {
-      setWallets([...JSON.parse(response).wallets]);
-    }).catch(console.log);
+  function saveFile() {
+    let element = document.createElement("a");
+    let walletsObject:any = {"wallets": []};
+    walletsObject.wallets = wallets;
+    let file = new Blob([JSON.stringify(walletsObject)], {type: "application/json"});
+    element.href = URL.createObjectURL(file);
+    element.download = "mintyExports.json";
+    element.click();
   }
 
 
 
   const handleWalletNameChange = event => {
     let limit = 12;
-      setCreateWalletName(event.target.value.slice(0, limit));
+    setCreateWalletName(event.target.value.slice(0, limit));
   };
 
   const handleImportNameChange = event => {
@@ -142,8 +179,6 @@ const Wallets = () => {
     setSelectedPk(selectedPk);
   };
 
-  
-
   const selectAddress = (addressIndex) => {
     let walletSelectedArray: any = [];
     walletSelectedArray = walletsSelected;
@@ -167,38 +202,7 @@ const Wallets = () => {
     navigator.clipboard.writeText(pk);
   }
 
-  function saveFile() {
-    let element = document.createElement("a");
-    let walletsObject:any = {"wallets": []};
-    walletsObject.wallets.push(wallets);
-    let file = new Blob([JSON.stringify(walletsObject)], {type: "application/json"});
-    element.href = URL.createObjectURL(file);
-    element.download = "mintyExports.json";
-    element.click();
-  }
 
-  const handleFileInput = (e) => {
-    if (e.target != null) {
-      let file = (e.target as any).files[0];
-      let reader:any = new FileReader();
-
-      reader.addEventListener("load", () => {
-        try {
-          let data = JSON.parse(reader.result);
-          importAndStoreWalletFromFile(data).then(response => {
-            setWallets(response);
-          }).catch(console.log);
-          setImportOpen(false);
-        } catch (err) {
-          console.log(err);
-        }
-      }, false);
-      
-      if (file.type == "application/json") {
-        reader.readAsText(file);
-      }
-    }
-  };
 
   const walletsOptionsList = wallets.map((addressObject, index: any) =>
     <option key={index} className="bg-neutral-800 text-[0.75rem]">{addressObject.address}</option>
@@ -275,7 +279,7 @@ const Wallets = () => {
           <div className="col-span-2">balance</div>
         </div>
       </div>
-      <div className="overflow-y-scroll flex-grow">
+      <div className="overflow-y-auto flex-grow">
         {walletsList}
       </div>
       <div className="flex gap-6 my-5"> 
