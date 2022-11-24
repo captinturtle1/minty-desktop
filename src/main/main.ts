@@ -131,6 +131,48 @@ ipcMain.handle('delete-address', (event, index) => {
   });
 })
 
+ipcMain.handle('get-settings', () => {
+  return new Promise(async (resolve, reject) => {
+    fs.readFile(`${app.getPath("userData")}\\settings.json`, 'utf8', (err: any, readData: any) => {
+      if (err) {
+        console.log("No settings.json");
+        let settingsObject: any = 
+        {
+          "rpc": "",
+          "webhook": "",
+          "theme": "simple",
+        };
+
+        fs.writeFile(`${app.getPath("userData")}\\settings.json`, JSON.stringify(settingsObject), (err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(JSON.stringify(settingsObject));
+          }
+        });
+      } else {
+        resolve(readData);
+      }
+    });
+  });
+});
+
+ipcMain.handle('set-settings', (event, data) => {
+  return new Promise(async (resolve, reject) => {
+    fs.writeFile(`${app.getPath("userData")}\\settings.json`, JSON.stringify(data), (err) => {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(JSON.stringify(data));
+      }
+    });
+  });
+})
+
+
+
+
+
 if (process.env.NODE_ENV === 'production') {
   const sourceMapSupport = require('source-map-support');
   sourceMapSupport.install();
