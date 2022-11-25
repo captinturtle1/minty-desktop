@@ -1,31 +1,50 @@
 import { useState, useEffect } from "react";
 import { ethers } from 'ethers';
 
+async function getSettings() {
+	return await window.electron.ipcRenderer.getSettings();
+}
+
 const gasWindow = () => {
     const [gasPrice, setGasPrice] = useState("");
     const [lastBaseFeePerGas, setLastBaseFeePerGas] = useState("");
     const [maxFeePerGas, setMaxFeePerGas] = useState("");
     const [maxPriorityFeePerGas, setMaxPriorityFeePerGas] = useState("");
-
-    const provider = new ethers.providers.InfuraProvider("goerli", "ccd0f54c729d4e58a9b7b34cb3984555")
     
     useEffect(() => {
-      getGas();
-      setInterval(async function() {
-        getGas();
-      }, 60000);
+      getData().then(rpc => {
+        getGas(rpc);
+        setInterval(async function() {
+          getGas(rpc);
+        }, 10000);
+      }).catch(console.log);
     }, []);
 
-    const getGas = async () => {
-      let feeDataObject:any = await provider.getFeeData();
-      console.log(ethers.utils.formatUnits(feeDataObject.gasPrice.toString(), "gwei"), ethers.utils.formatUnits(feeDataObject.lastBaseFeePerGas.toString(), "gwei"), ethers.utils.formatUnits(feeDataObject.maxFeePerGas.toString(), "gwei"), ethers.utils.formatUnits(feeDataObject.maxPriorityFeePerGas.toString(), "gwei"));
-      setGasPrice(ethers.utils.formatUnits(feeDataObject.gasPrice.toString(), "gwei").substring(0,5))
-      setLastBaseFeePerGas(ethers.utils.formatUnits(feeDataObject.lastBaseFeePerGas.toString(), "gwei").substring(0,5))
-      setMaxFeePerGas(ethers.utils.formatUnits(feeDataObject.maxFeePerGas.toString(), "gwei").substring(0,5))
-      setMaxPriorityFeePerGas(ethers.utils.formatUnits(feeDataObject.maxPriorityFeePerGas.toString(), "gwei").substring(0,5));
-			//let gas:any = ethers.utils.formatUnits(bigNumberGas, "gwei")
-      //let cutDownGas = gas.substring(0,7);
-      
+    const getData = async () => {
+      return new Promise(async (resolve, reject) => {
+        getSettings().then((response:any) => {
+          let responseParsed = JSON.parse(response);
+          resolve(responseParsed.rpc);
+        }).catch(err => {
+          reject(err);
+        });
+      });
+    }
+
+    const getGas = async (rpc) => {
+      try {
+        let provider = ethers.providers.getDefaultProvider(rpc);
+        let feeDataObject:any = await provider.getFeeData();
+        console.log(ethers.utils.formatUnits(feeDataObject.gasPrice.toString(), "gwei"), ethers.utils.formatUnits(feeDataObject.lastBaseFeePerGas.toString(), "gwei"), ethers.utils.formatUnits(feeDataObject.maxFeePerGas.toString(), "gwei"), ethers.utils.formatUnits(feeDataObject.maxPriorityFeePerGas.toString(), "gwei"));
+        setGasPrice(ethers.utils.formatUnits(feeDataObject.gasPrice.toString(), "gwei").substring(0,5))
+        setLastBaseFeePerGas(ethers.utils.formatUnits(feeDataObject.lastBaseFeePerGas.toString(), "gwei").substring(0,5))
+        setMaxFeePerGas(ethers.utils.formatUnits(feeDataObject.maxFeePerGas.toString(), "gwei").substring(0,5))
+        setMaxPriorityFeePerGas(ethers.utils.formatUnits(feeDataObject.maxPriorityFeePerGas.toString(), "gwei").substring(0,5));
+			  //let gas:any = ethers.utils.formatUnits(bigNumberGas, "gwei")
+        //let cutDownGas = gas.substring(0,7);
+      } catch (err) {
+        console.log(err);
+      }
     }
 
   return (

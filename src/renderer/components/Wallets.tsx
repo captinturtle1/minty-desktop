@@ -34,9 +34,7 @@ const Wallets = () => {
 
   const getData = async () => {
     getWallets().then((response:any) => {
-      console.log(wallets);
       setWallets([...JSON.parse(response).wallets]);
-    console.log(wallets);
     });
   }
 

@@ -1,7 +1,17 @@
 import { ethers } from 'ethers';
 import abi from './abi.json';
 
-const provider = new ethers.providers.InfuraProvider("goerli", "ccd0f54c729d4e58a9b7b34cb3984555")
+async function getSettings() {
+	return await window.electron.ipcRenderer.getSettings();
+}
+
+let provider: any;
+
+getSettings().then((response: any) => {
+	let responseParsed = JSON.parse(response);
+	provider = ethers.providers.getDefaultProvider(responseParsed.rpc);
+}).catch(console.log);
+
 const disperseAddress = "0x1EbD7f4ea90DBD3d6Be68869502B2022Aa000d0c";
 
 export async function getWallets() {
