@@ -1,16 +1,11 @@
 import { ethers } from 'ethers';
 import abi from './abi.json';
 
-async function getSettings() {
-	return await window.electron.ipcRenderer.getSettings();
-}
-
-let provider: any;
-
-getSettings().then((response: any) => {
-	let responseParsed = JSON.parse(response);
-	provider = ethers.providers.getDefaultProvider(responseParsed.rpc);
-}).catch(console.log);
+const getRpc = async () => {
+	let settings:any = await window.electron.ipcRenderer.getSettings();
+	settings = JSON.parse(settings);
+	return settings.rpc;
+};
 
 const disperseAddress = "0x1EbD7f4ea90DBD3d6Be68869502B2022Aa000d0c";
 
@@ -119,9 +114,10 @@ export function removeWallet(index:number[]) {
 	});
 }
 
-export async function getBalance(wallets) {
+export async function getBalances(wallets) {
 	return new Promise(async (resolve, reject) => {
 		try {
+			let provider = ethers.providers.getDefaultProvider(await getRpc());
 			console.log("getting balances");
 			let walletsBalanceArray: any = []
 			for (let i = 0; i < wallets.length; i++) {
@@ -129,6 +125,7 @@ export async function getBalance(wallets) {
 				let balanceEther = ethers.utils.formatEther(balanceWei);
 				walletsBalanceArray[i] = balanceEther.substring(0,7);
 			}
+			console.log(walletsBalanceArray);
 			resolve(walletsBalanceArray);
 		} catch (err) {
 			reject(err);
@@ -140,6 +137,7 @@ export async function disperse(walletsSelected, wallets, amountToDisperse, selec
 	return new Promise(async (resolve, reject) => {
 		console.log("dispersing");
 		try {
+			let provider = ethers.providers.getDefaultProvider(await getRpc());
 			let signer = new ethers.Wallet(selectedPk, provider);
 			const disperseContract = new ethers.Contract(disperseAddress, abi, signer);
 			let walletAddressArray: any = [];
@@ -168,6 +166,7 @@ export async function consolidate(walletSelected, walletsSelected, wallets) {
 	return new Promise(async (resolve, reject) => {
 		console.log("consolidating");
 		try {
+			let provider = ethers.providers.getDefaultProvider(await getRpc());
 			for (let i = 0; i < walletsSelected.length; i++) {
 				let wallet = new ethers.Wallet(wallets[walletsSelected[i]].privateKey, provider);
 				let balanceWei:any = await provider.getBalance(wallets[walletsSelected[i]].address);

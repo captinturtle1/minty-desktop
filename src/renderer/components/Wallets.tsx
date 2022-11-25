@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createAndStoreWallet, removeWallet, getBalance, disperse, consolidate, importAndStoreWallet, importAndStoreWalletFromFile, getWallets } from './functionalStuff/walletManager';
+import { getBalances, disperse, consolidate, createAndStoreWallet, removeWallet, importAndStoreWallet, importAndStoreWalletFromFile, getWallets } from './functionalStuff/walletManager';
 import { FaTrash, FaKey } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai'
 import { BiRefresh } from 'react-icons/bi'
@@ -104,25 +104,33 @@ const Wallets = () => {
     }
   };
 
-  const updateWalletBalances = async () => {
+  const updateWalletBalances = () => {
     setActiveTransaction(true);
-    setWalletsBalances(await getBalance(wallets));
-    setActiveTransaction(false);
+    getBalances(wallets).then(response => {
+      setWalletsBalances(response);
+      setActiveTransaction(false);
+    }).catch(err => {
+      console.log(err);
+      setActiveTransaction(false);
+    })
   }
 
-  const disperseToWallets = async () => {
+  const disperseToWallets = () => {
     if (amountToDisperse > 0) {
       setActiveTransaction(true);
-      await disperse(walletsSelected, wallets, amountToDisperse, selectedPk);
-      updateWalletBalances();
+      disperse(walletsSelected, wallets, amountToDisperse, selectedPk).then(response => {
+        updateWalletBalances();
+      }).catch(console.log);
+      
     }
   }
 
-  const consolidateWallets = async () => {
+  const consolidateWallets = () => {
     if (walletsSelected.length > 0) {
       setActiveTransaction(true);
-      await consolidate(selectedMainAddress, walletsSelected, wallets);
-      updateWalletBalances();
+      consolidate(selectedMainAddress, walletsSelected, wallets).then(response => {
+        updateWalletBalances();
+      }).catch(console.log);
     }
   }
 
