@@ -87,7 +87,7 @@ const Tools = () => {
       <div className="h-1 w-full bg-gray-500 mt-3 rounded-full mb-5"/>
       <div className="flex gap-16">
         <div>
-          <div className="text-xl font-semibold my-3">Calculate eip1559</div>
+          <div className="text-xl font-semibold mb-3">Calculate eip1559</div>
           <div className="flex gap-3">
             <form className="flex text-[0.75rem]">
               <input
@@ -114,14 +114,14 @@ const Tools = () => {
               />
             </form>
           </div>
-          <div className="text-xl font-semibold my-3">Output:</div>
+          <div className="text-xl font-semibold mt-10 mb-3">Output:</div>
           <div className="flex flex-col">
             <div>max: {eip1559OutputMax}</div>
             <div>min: {eip1559OutputMin}</div>
           </div>
         </div>
         <div>
-          <div className="text-xl font-semibold my-3">Calculate legacy</div>
+          <div className="text-xl font-semibold mb-3">Calculate legacy</div>
           <div className="flex gap-3">
             <form className="flex text-[0.75rem]">
               <input
@@ -140,7 +140,7 @@ const Tools = () => {
               />
             </form>
           </div>
-          <div className="text-xl font-semibold my-3">Output:</div>
+          <div className="text-xl font-semibold mt-10 mb-3">Output:</div>
           <div className="flex flex-col">
             <div>cost: {legacyOutput}</div>
           </div>

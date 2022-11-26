@@ -51,25 +51,19 @@ const Stats = () => {
           <div onClick={submitCheckProfit} className="bg-green-500 hover:bg-green-400 active:bg-green-600 py-2 w-24 text-center transition-all cursor-pointer rounded-xl">Calculate</div>
         </div>
         <div className="h-1 w-full bg-gray-500 mt-3 rounded-full mb-5"/>
-        <div className="grid grid-cols-3 gap-5 mt-12">
-          {results.length > 0 ? (
-            <>
-              <div><div>Total minted</div>{results[6]}</div>
-              <div><div>Mint cost</div>{results[1]}</div>
-              <div><div>Mint fee</div>{results[2]}</div>
-              <div><div>Total secondary</div>{results[7]}</div>
-              <div><div>Secondary cost</div>{results[3]}</div>
-              <div><div>Secondary fee</div>{results[4]}</div>
-              <div><div>Amount sold</div>{results[5]}</div>
-              <div><div>ETH from sales</div>{results[0]}</div>
-              <div><div>Realized</div>{results[11]}</div>
-              <div><div>Holding</div>{results[8]}</div>
-              <div><div>Floor</div>{results[9]}</div>
-              <div><div>Unrealized</div>{results[10]}</div>
-            </>
-          ):(
-            <></>
-          )}
+        <div className="grid grid-cols-3 gap-5">
+          <div><div>Total minted</div>{results[6]}</div>
+          <div><div>Mint cost</div>{results[1]}</div>
+          <div><div>Mint fee</div>{results[2]}</div>
+          <div><div>Total secondary</div>{results[7]}</div>
+          <div><div>Secondary cost</div>{results[3]}</div>
+          <div><div>Secondary fee</div>{results[4]}</div>
+          <div><div>Amount sold</div>{results[5]}</div>
+          <div><div>ETH from sales</div>{results[0]}</div>
+          <div><div>Realized</div>{results[11]}</div>
+          <div><div>Holding</div>{results[8]}</div>
+          <div><div>Floor</div>{results[9]}</div>
+          <div><div>Unrealized</div>{results[10]}</div>
         </div>
       </div>
     );

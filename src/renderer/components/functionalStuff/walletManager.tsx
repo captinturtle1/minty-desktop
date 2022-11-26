@@ -175,18 +175,29 @@ export async function consolidate(walletSelected, walletsSelected, wallets) {
 				let calculatedCost = (bigNumberGas.maxFeePerGas.add(bigNumberGas.maxPriorityFeePerGas)).mul(21000);
 				let balanceMinusFee = balanceWei.sub(calculatedCost);
 				let minusFeeString = balanceMinusFee.toString();
-
-				console.log('sending', parseInt(minusFeeString), 'from', wallets[walletsSelected[i]].address, 'to', walletSelected);
-				const tx = await wallet.sendTransaction({
-					to: walletSelected,
-					value: minusFeeString
-				});
-				tx.wait(1).then(()=> {
+				
+				if (minusFeeString > 0) {
+					console.log('sending', parseInt(minusFeeString), 'from', wallets[walletsSelected[i]].address, 'to', walletSelected);
+					let receipt = await wallet.sendTransaction({
+						to: walletSelected,
+						value: minusFeeString
+					});
+					
+					receipt.wait(1).then(()=> {
+						if (i == walletsSelected.length - 1) {
+							console.log('resolving');
+							resolve(i);
+						}
+					})
+				} else {
+					// this will resolve before other tx's are done resulting in balance refresh before the tx confirms. need to fix, not a big deal tho
+					console.log("not enough eth for fee");
 					if (i == walletsSelected.length - 1) {
 						console.log('resolving');
-						resolve(tx);
+						resolve(i);
 					}
-				})
+				}
+				
 			}
 		} catch (err) {
 			console.log(err);

@@ -22,21 +22,26 @@ const Wallets = () => {
   const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
-    if (wallets.length > 0) {
-      setSelectedMainAddress(wallets[0].address);
-      let result = wallets.map(a => a.address);
-      let selectedIndex = result.findIndex((element) => element == wallets[0].address);
-      let selectedPk = wallets[selectedIndex].privateKey;
-      setSelectedPk(selectedPk);
-    }
-    getData();
+    getData().then((response:any) => {
+      let newWallets = JSON.parse(response).wallets;
+      console.log(newWallets);
+      if (newWallets.length > 0) {
+        setSelectedMainAddress(newWallets[0].address);
+        let result = newWallets.map(a => a.address);
+        let selectedPk = newWallets[result.indexOf(newWallets[0].address)].privateKey;
+        setSelectedPk(selectedPk);
+      }
+    });
   }, []);
 
-  const getData = async () => {
+  const getData = async () => new Promise(async (resolve, reject) => {
     getWallets().then((response:any) => {
       setWallets([...JSON.parse(response).wallets]);
+      resolve(response);
+    }).catch(err => {
+      reject(err);
     });
-  }
+  });
 
   const handleRemoveWallet = async (e, index) => {
     e.stopPropagation();
@@ -118,9 +123,12 @@ const Wallets = () => {
   const disperseToWallets = () => {
     if (amountToDisperse > 0) {
       setActiveTransaction(true);
-      disperse(walletsSelected, wallets, amountToDisperse, selectedPk).then(response => {
+      disperse(walletsSelected, wallets, amountToDisperse, selectedPk).then(() => {
         updateWalletBalances();
-      }).catch(console.log);
+      }).catch(err => {
+        console.log(err);
+        setActiveTransaction(false);
+      });
       
     }
   }
@@ -128,9 +136,12 @@ const Wallets = () => {
   const consolidateWallets = () => {
     if (walletsSelected.length > 0) {
       setActiveTransaction(true);
-      consolidate(selectedMainAddress, walletsSelected, wallets).then(response => {
+      consolidate(selectedMainAddress, walletsSelected, wallets).then(() => {
         updateWalletBalances();
-      }).catch(console.log);
+      }).catch(err => {
+        console.log(err);
+        setActiveTransaction(false);
+      });
     }
   }
 
