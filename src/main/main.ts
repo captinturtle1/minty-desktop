@@ -131,6 +131,62 @@ ipcMain.handle('delete-address', (event, index) => {
   });
 })
 
+ipcMain.handle('write-task', (event, data) => {
+  return new Promise(async (resolve, reject) => {
+    fs.readFile(`${app.getPath("userData")}\\tasks.json`, 'utf8', (err: any, readData: any) => {
+    	if (err) {
+    		reject(err);
+    	} else {
+        let tasksObject: any = {"tasks": []};
+        let readDataParsed = JSON.parse(readData);
+
+        tasksObject.tasks = readDataParsed.tasks
+        let newArray = tasksObject.tasks.concat(data);
+        tasksObject.tasks = newArray;
+
+        fs.writeFile(`${app.getPath("userData")}\\tasks.json`, JSON.stringify(tasksObject), (err) => {
+          if (err) {
+            reject(err);
+          } else {
+            resolve(JSON.stringify(tasksObject));
+          }
+        });
+      }
+    });
+  });
+})
+
+ipcMain.handle('delete-task', (event, indexes) => {
+  return new Promise(async (resolve, reject) => {
+    fs.readFile(`${app.getPath("userData")}\\tasks.json`, 'utf8', (err: any, readData: any) => {
+    	if (err) {
+    		reject(err);
+    	} else {
+        const compareNumbers = (a, b) => {
+          return b - a;
+        }
+
+        let tasksObject: any = {"tasks": []};
+        let readDataParsed = JSON.parse(readData);
+        tasksObject.tasks = readDataParsed.tasks
+        indexes.sort(compareNumbers);
+
+        for (let i = 0; i < indexes.length; i++) {
+          tasksObject.tasks.splice(indexes[i], 1);
+        }
+
+        fs.writeFile(`${app.getPath("userData")}\\tasks.json`, JSON.stringify(tasksObject), (err) => {
+        	if (err) {
+        		reject(err);
+        	} else {
+            resolve(JSON.stringify(tasksObject));
+          }
+        });
+      }
+    });
+  });
+})
+
 ipcMain.handle('get-settings', () => {
   return new Promise(async (resolve, reject) => {
     fs.readFile(`${app.getPath("userData")}\\settings.json`, 'utf8', (err: any, readData: any) => {

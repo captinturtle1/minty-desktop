@@ -65,16 +65,21 @@ const Settings = () => {
   }
 
   const testWebhook = () => {
-    let request = new XMLHttpRequest();
-    request.open("POST", webhook);
-    request.setRequestHeader('Content-type', 'application/json');
-    let params = {
-      username: "Minty",
-      avatar_url: "https://i.kym-cdn.com/entries/icons/original/000/037/848/cover2.jpg",
-      content: "Minty test!"
-    };
-    request.send(JSON.stringify(params));
-  
+    fetch(
+      webhook, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(
+          {
+            username: "Minty",
+            avatar_url: "https://i.kym-cdn.com/entries/icons/original/000/037/848/cover2.jpg",
+            content: "Minty test!"
+          }
+        )
+      }
+    );
     console.log("Test Webhook");
   }
 

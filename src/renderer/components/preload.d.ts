@@ -9,6 +9,8 @@ declare global {
         getWallets(): unknown;
 		    writeAddress(data: any): unknown;
         deleteAddress(data: number[]): unknown;
+        writeTask(data: any): unknown;
+        deleteTask(data: number[]): unknown;
         getSettings(): unknown;
         setSettings(data: any): unknown;
         sendMessage(channel: Channels, args: unknown[]): void;

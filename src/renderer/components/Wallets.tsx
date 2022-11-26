@@ -151,7 +151,7 @@ const Wallets = () => {
     walletsObject.wallets = wallets;
     let file = new Blob([JSON.stringify(walletsObject)], {type: "application/json"});
     element.href = URL.createObjectURL(file);
-    element.download = "mintyExports.json";
+    element.download = "mintyWalletExports.json";
     element.click();
   }
 

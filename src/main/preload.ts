@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld('electron', {
     getWallets: () => ipcRenderer.invoke('get-wallets'),
     writeAddress: (address: any) => ipcRenderer.invoke('write-address', address),
     deleteAddress: (index: number[]) => ipcRenderer.invoke('delete-address', index),
+    writeTask: (tasks: any) => ipcRenderer.invoke('write-task', tasks),
+    deleteTask: (indexes: number[]) => ipcRenderer.invoke('delete-task', indexes),
     getSettings: () => ipcRenderer.invoke('get-settings'),
     setSettings: (newSettings: any) => ipcRenderer.invoke('set-settings', newSettings),
     sendMessage(channel: Channels, args: unknown[]) {
