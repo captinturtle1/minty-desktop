@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, getWallets } from './functionalStuff/taskManager';
 import { FaTrash } from 'react-icons/fa';
 
-const Wallets = () => {
+const Tasks = () => {
   const [tasks, setTasks] = useState<any>([]);
   const [wallets, setWallets] = useState<any>([]);
 
@@ -25,6 +25,9 @@ const Wallets = () => {
   const [newTaskSetPrio, setNewTaskSetPrio] = useState<number>();
   const [newTaskSetLimit, setNewTaskSetLimit] = useState<number>();
 
+  const [activeTransaction, setActiveTransaction] = useState(false);
+  const [forceGweiAmount, setForceGweiAmount] = useState(0);
+
   useEffect(() => {
     getData().then((response:any) => {
       console.log(response);
@@ -32,19 +35,19 @@ const Wallets = () => {
   }, []);
 
   const getData = async () => new Promise(async (resolve, reject) => {
-    getTasks().then((response:any) => {
-      setTasks([...JSON.parse(response).tasks]);
-      resolve(response);
+    getTasks().then((taskResponse:any) => {
+      setTasks([...JSON.parse(taskResponse).tasks]);
+      getWallets().then((walletResponse:any) => {
+        setWallets([...JSON.parse(walletResponse).wallets]);
+        resolve("data retrieved");
+      }).catch(err => {
+        reject(err);
+      });
     }).catch(err => {
       reject(err);
     });
 
-    getWallets().then((response:any) => {
-      setWallets([...JSON.parse(response).wallets]);
-      resolve(response);
-    }).catch(err => {
-      reject(err);
-    });
+    
   });
 
   const truncateAddress = (address) => {
@@ -53,15 +56,15 @@ const Wallets = () => {
     return `${firstSix}...${lastFour}`;
   }
 
-  const selectAddress = (address) => {
+  const selectAddress = (index) => {
     let walletSelectedArray:string[] = walletsSelected;
-    if (walletSelectedArray.includes(address) == true) {
-      walletSelectedArray.splice(walletSelectedArray.indexOf(address), 1);
+    if (walletSelectedArray.includes(index) == true) {
+      walletSelectedArray.splice(walletSelectedArray.indexOf(index), 1);
     } else {
-      walletSelectedArray.push(address);
+      walletSelectedArray.push(index);
     }
     setWalletsSelected([...walletSelectedArray]);
-    console.log(walletsSelected);
+    console.log("selceted: ", walletsSelected);
   };
 
   const selectTask = (taskIndex) => {
@@ -80,12 +83,16 @@ const Wallets = () => {
     setTasksSelected([...[]]);
     let indexes:number[] = [];
     indexes[0] = index;
-    removeTask(indexes);
+    removeTask(indexes).then((response:any) => {
+      setTasks([...JSON.parse(response).tasks]);
+    });
   }
 
   const handleBatchRemoveTask = () => {
     setTasksSelected([...[]]);
-    removeTask(tasksSelected);
+    removeTask(tasksSelected).then((response:any) => {
+      setTasks([...JSON.parse(response).tasks]);
+    });
   }
 
   const handleRemoveAllTasks = () => {
@@ -94,7 +101,9 @@ const Wallets = () => {
     for (let i = 0; i < tasks.length; i++) {
       allTasksArray.push(i);
     }
-    removeTask(allTasksArray);
+    removeTask(allTasksArray).then((response:any) => {
+      setTasks([...JSON.parse(response).tasks]);
+    });
   }
 
   function saveFile() {
@@ -115,7 +124,9 @@ const Wallets = () => {
       reader.addEventListener("load", () => {
         try {
           let data = JSON.parse(reader.result);
-          importAndStoreTaskFromFile(data);
+          importAndStoreTaskFromFile(data).then((response:any) => {
+            setTasks([...JSON.parse(response).tasks]);
+          });
           setImportOpen(false);
         } catch (err) {
           console.log(err);
@@ -140,12 +151,15 @@ const Wallets = () => {
         "limitMode": newTaskLimitMode,
         "userSetGas": newTaskSetGas,
         "userSetPrio": newTaskSetPrio,
-        "wallet": walletsSelected[i]
+        "wallet": wallets[walletsSelected[i]].address,
+        "pk": wallets[walletsSelected[i]].privateKey
       };
       createdTasksArray.push(newTask);
     }
     setWalletsSelected([...[]]);
-    createAndStoreTask(createdTasksArray);
+    createAndStoreTask(createdTasksArray).then((response:any) => {
+      setTasks([...JSON.parse(response).tasks]);
+    });
   }
 
   const onClickStopPropagation = (e) => {
@@ -187,6 +201,10 @@ const Wallets = () => {
   const handleSetNewTaskSetLimit = event => {
     setNewTaskSetLimit(event.target.value);
   };
+
+  const handleForceGwei = event => {
+    setForceGweiAmount(event.target.value);
+  };
   
   
 
@@ -206,6 +224,30 @@ const Wallets = () => {
   return (
     <div className="text-white px-8 pt-8 h-full flex flex-col">
       <div className="text-3xl font-semibold">Tasks</div>
+      <div className="flex gap-5 mt-2 h-10">
+      <div className="my-auto">force gwei</div>
+        <form className="flex text-[0.75rem]">
+          <input
+            value={forceGweiAmount}
+            type='number'
+            onChange={handleForceGwei}
+            placeholder="gwei"
+            className="w-10 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
+          />
+        </form>
+        
+        <div className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[80px] flex">
+            <div className="m-auto">Set</div>
+        </div>
+        <div className="flex-grow"/>
+        <div className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[150px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[150px] flex"}>
+          {!activeTransaction ? (
+            <div className="m-auto">Start Tasks</div>
+          ):(
+            <div className="m-auto">Cancel</div>
+          )}
+        </div>
+      </div>
       <div className="h-1 w-full bg-gray-500 mt-3 rounded-full mb-5"/>
       <div className="flex px-2 rounded-lg ml-2 mr-[83px]">
         <div className="grid grid-cols-5 flex-grow gap-5 text-sm">
@@ -363,8 +405,8 @@ const Wallets = () => {
                 <div>name</div>
                 <div>address</div>
               </div>
-              {wallets.map((addressObject) =>
-                <div onClick={() => selectAddress(addressObject.address)} key={addressObject.address} className={walletsSelected.includes(addressObject.address) ? 
+              {wallets.map((addressObject:any, index:number) =>
+                <div key={addressObject.address} onClick={() => selectAddress(index)} className={walletsSelected.includes(index) ? 
                   "grid grid-cols-2 p-2 bg-gray-300 bg-opacity-50 rounded-lg transition-all text-sm w-60"
                   :
                   "grid grid-cols-2 p-2 bg-gray-500 bg-opacity-50 rounded-lg transition-all text-sm w-60"}
@@ -402,4 +444,4 @@ const Wallets = () => {
   );
 }
   
-export default Wallets;
+export default Tasks;

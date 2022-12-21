@@ -15,26 +15,46 @@ export async function getWallets() {
 }
 
 export function createAndStoreTask(createdTasksArray) {
-	window.electron.ipcRenderer.writeTask(createdTasksArray);
+	return new Promise(async (resolve, reject) => {
+		try {
+			let response = await window.electron.ipcRenderer.writeTask(createdTasksArray);
+			resolve(response);
+		} catch (err) {
+			reject(err);
+		}
+	});
 }
 
 export function importAndStoreTaskFromFile(data) {
-	if (data.tasks != undefined) {
-		if (data.tasks.length > 0) {
-			let taskArray: any = [];
-			for (let i = 0; i < data.tasks.length; i++) {
-				taskArray.push(data.tasks[i]);
+	return new Promise(async (resolve, reject) => {
+		try {
+			if (data.tasks != undefined) {
+				if (data.tasks.length > 0) {
+					let taskArray: any = [];
+					for (let i = 0; i < data.tasks.length; i++) {
+						taskArray.push(data.tasks[i]);
+					}
+					let response = await window.electron.ipcRenderer.writeTask(taskArray);
+					resolve(response);
+				} else {
+					reject("no tasks");
+				}
+			} else {
+				reject("data undefined");
 			}
-			window.electron.ipcRenderer.writeTask(taskArray);
-			return true;
-		} else {
-			return false;
+		} catch (err) {
+			reject(err);
 		}
-	} else {
-		return false;
-	}
+	});
 }
 
 export function removeTask(indexes) {
-	window.electron.ipcRenderer.deleteTask(indexes);
+	return new Promise(async (resolve, reject) => {
+		try {
+			let response = await window.electron.ipcRenderer.deleteTask(indexes);
+			resolve(response);
+		} catch (err) {
+			reject(err);
+		}
+	});
 }
