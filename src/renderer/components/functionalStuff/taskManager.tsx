@@ -58,3 +58,84 @@ export function removeTask(indexes) {
 		}
 	});
 }
+
+
+
+export async function startTasks(tasks) {
+	console.log(tasks, tasks.length);
+	return new Promise(async (resolve, reject) => {
+		console.log("Sending transactions");
+		let provider = ethers.providers.getDefaultProvider(await getRpc());
+		for (let i = 0; i < tasks.length; i++) {
+			try {
+				let wallet = new ethers.Wallet(tasks[i].pk, provider);
+				let txCost = ethers.utils.parseUnits(tasks[i].cost, "ether");
+				let gasInWei = ethers.utils.parseUnits(tasks[i].userSetGas, "gwei");
+				let prioInWei = ethers.utils.parseUnits(tasks[i].userSetPrio, "gwei");
+				
+				if (tasks[i].gasMode == "Auto") {
+					if (tasks[i].limitMode == "Auto") {
+						let receipt = await wallet.sendTransaction({
+							to: tasks[i].contract,
+							value: txCost,
+							data: tasks[i].hex
+						});
+						console.log(receipt);
+						receipt.wait(1).then(response => {
+							console.log(response)
+						}).catch(console.log);
+					} else {
+						let receipt = await wallet.sendTransaction({
+							to: tasks[i].contract,
+							value: txCost,
+							data: tasks[i].hex,
+							gasLimit: tasks[i].userSetLimit
+						});
+						console.log(receipt);
+						receipt.wait(1).then(response => {
+							console.log(response)
+						}).catch(console.log);
+					}
+				} else {
+					if (tasks[i].limitMode == "Auto") {
+						let receipt = await wallet.sendTransaction({
+							to: tasks[i].contract,
+							value: txCost,
+							data: tasks[i].hex,
+							maxFeePerGas: gasInWei,
+							maxPriorityFeePerGas: prioInWei
+						});
+						console.log(receipt);
+						receipt.wait(1).then(response => {
+							console.log(response)
+						}).catch(console.log);
+					} else {
+						let receipt = await wallet.sendTransaction({
+							to: tasks[i].contract,
+							value: txCost,
+							data: tasks[i].hex,
+							maxFeePerGas: gasInWei,
+							maxPriorityFeePerGas: prioInWei,
+							gasLimit: tasks[i].userSetLimit
+						});
+						console.log(receipt);
+						receipt.wait(1).then(response => {
+							console.log(response)
+						}).catch(console.log);
+					}
+				}
+			} catch(err) {
+				console.log(err);
+			}
+		}
+		resolve("Sent");
+	});
+}
+
+export function speedUpTasks(tasks) {
+	
+}
+
+export function cancelTasks(tasks) {
+	
+}

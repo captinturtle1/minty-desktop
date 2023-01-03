@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, getWallets } from './functionalStuff/taskManager';
+import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, getWallets, startTasks } from './functionalStuff/taskManager';
 import { FaTrash } from 'react-icons/fa';
 
 const Tasks = () => {
@@ -15,8 +15,7 @@ const Tasks = () => {
 
   const [newTaskContract, setNewTaskContract] = useState<string>();
   const [newTaskCost, setNewTaskCost] = useState<number>();
-  const [newTaskFunction, setNewTaskFunction] = useState<string>();
-  const [newTaskArgs, setNewTaskArgs] = useState<string>();
+  const [newTaskHex, setNewTaskHex] = useState<string>();
 
   const [newTaskGasMode, setNewTaskGasMode] = useState<string>();
   const [newTaskLimitMode, setNewTaskLimitMode] = useState<string>();
@@ -28,6 +27,8 @@ const Tasks = () => {
   const [activeTransaction, setActiveTransaction] = useState(false);
   const [forceGweiAmount, setForceGweiAmount] = useState(0);
 
+  const[taskStatuses, setTaskStatuses] = useState<any>([]);
+
   useEffect(() => {
     getData().then((response:any) => {
       console.log(response);
@@ -37,6 +38,11 @@ const Tasks = () => {
   const getData = async () => new Promise(async (resolve, reject) => {
     getTasks().then((taskResponse:any) => {
       setTasks([...JSON.parse(taskResponse).tasks]);
+      let newStatusArray:any = [];
+      for (let i = 0; i < JSON.parse(taskResponse).tasks.length; i++) {
+        newStatusArray.push("Doing nothing...");
+      }
+      setTaskStatuses([...newStatusArray]);
       getWallets().then((walletResponse:any) => {
         setWallets([...JSON.parse(walletResponse).wallets]);
         resolve("data retrieved");
@@ -85,6 +91,11 @@ const Tasks = () => {
     indexes[0] = index;
     removeTask(indexes).then((response:any) => {
       setTasks([...JSON.parse(response).tasks]);
+      let newStatusArray:any = [];
+      for (let i = 0; i < JSON.parse(response).tasks.length; i++) {
+        newStatusArray.push("Doing nothing...");
+      }
+      setTaskStatuses([...newStatusArray]);
     });
   }
 
@@ -92,6 +103,11 @@ const Tasks = () => {
     setTasksSelected([...[]]);
     removeTask(tasksSelected).then((response:any) => {
       setTasks([...JSON.parse(response).tasks]);
+      let newStatusArray:any = [];
+      for (let i = 0; i < JSON.parse(response).tasks.length; i++) {
+        newStatusArray.push("Doing nothing...");
+      }
+      setTaskStatuses([...newStatusArray]);
     });
   }
 
@@ -103,6 +119,8 @@ const Tasks = () => {
     }
     removeTask(allTasksArray).then((response:any) => {
       setTasks([...JSON.parse(response).tasks]);
+      let newStatusArray:any = [];
+      setTaskStatuses([...newStatusArray]);
     });
   }
 
@@ -126,6 +144,11 @@ const Tasks = () => {
           let data = JSON.parse(reader.result);
           importAndStoreTaskFromFile(data).then((response:any) => {
             setTasks([...JSON.parse(response).tasks]);
+            let newStatusArray:any = [];
+            for (let i = 0; i < JSON.parse(response).tasks.length; i++) {
+              newStatusArray.push("Doing nothing...");
+            }
+            setTaskStatuses([...newStatusArray]);
           });
           setImportOpen(false);
         } catch (err) {
@@ -145,12 +168,12 @@ const Tasks = () => {
       let newTask = {
         "contract": newTaskContract,
         "cost": newTaskCost,
-        "function": newTaskFunction,
-        "args": newTaskArgs,
+        "hex": newTaskHex,
         "gasMode": newTaskGasMode,
         "limitMode": newTaskLimitMode,
         "userSetGas": newTaskSetGas,
         "userSetPrio": newTaskSetPrio,
+        "userSetLimit": newTaskSetLimit,
         "wallet": wallets[walletsSelected[i]].address,
         "pk": wallets[walletsSelected[i]].privateKey
       };
@@ -159,6 +182,11 @@ const Tasks = () => {
     setWalletsSelected([...[]]);
     createAndStoreTask(createdTasksArray).then((response:any) => {
       setTasks([...JSON.parse(response).tasks]);
+      let newStatusArray:any = [];
+      for (let i = 0; i < JSON.parse(response).tasks.length; i++) {
+        newStatusArray.push("Doing nothing...");
+      }
+      setTaskStatuses([...newStatusArray]);
     });
   }
 
@@ -174,12 +202,8 @@ const Tasks = () => {
     setNewTaskCost(event.target.value);
   };
 
-  const handleSetFunction = event => {
-    setNewTaskFunction(event.target.value);
-  };
-
-  const handleSetArgs = event => {
-    setNewTaskArgs(event.target.value);
+  const handleSetHex= event => {
+    setNewTaskHex(event.target.value);
   };
 
   const handleSetNewTaskGasMode = event => {
@@ -205,17 +229,40 @@ const Tasks = () => {
   const handleForceGwei = event => {
     setForceGweiAmount(event.target.value);
   };
+
+  const handleStartTasks = () => {
+    setActiveTransaction(true);
+
+    let newStatusArray:any = [];
+    for (let i = 0; i < tasks.length; i++) {
+      newStatusArray.push("Starting");
+    }
+    setTaskStatuses([...newStatusArray]);
+
+    startTasks(tasks).then(response => {
+      let newStatusArray:any = [];
+      for (let i = 0; i < tasks.length; i++) {
+        newStatusArray.push("Confirmed");
+      }
+      setTaskStatuses([...newStatusArray]);
+      console.log(response);
+      setActiveTransaction(false);
+    }).catch(err => {
+      console.log(err);
+      setActiveTransaction(false);
+    });
+  }
   
   
 
   const tasksList = tasks.map((taskObject, index: number) =>
     <div onClick={() => selectTask(index)} key={index} className={tasksSelected.includes(index) ? "flex p-2 bg-gray-400 bg-opacity-50 rounded-lg my-1 mx-2 transition-all" : "flex p-2 bg-gray-500 bg-opacity-50 rounded-lg my-1 mx-2 transition-all"}>
-      <div className="grid grid-cols-5 flex-grow gap-5 text-sm">
+      <div className="grid grid-cols-6 flex-grow gap-5 text-sm">
         <div>{truncateAddress(taskObject.contract)}</div>
         <div>{taskObject.cost}</div>
-        <div>{taskObject.function}</div>
-        <div>{taskObject.args}</div>
+        <div>{truncateAddress(taskObject.hex)}</div>
         <div>{truncateAddress(taskObject.wallet)}</div>
+        <div className="col-span-2">{taskStatuses[index]}</div>
       </div>
       <FaTrash onClick={(e) => handleRemoveTask(e, index)} className="mx-2 m-auto text-white hover:text-gray-200 active:text-gray-300 cursor-pointer transition-all"/>
     </div>
@@ -225,37 +272,36 @@ const Tasks = () => {
     <div className="text-white px-8 pt-8 h-full flex flex-col">
       <div className="text-3xl font-semibold">Tasks</div>
       <div className="flex gap-5 mt-2 h-10">
-      <div className="my-auto">force gwei</div>
-        <form className="flex text-[0.75rem]">
-          <input
-            value={forceGweiAmount}
-            type='number'
-            onChange={handleForceGwei}
-            placeholder="gwei"
-            className="w-10 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
-          />
-        </form>
-        
-        <div className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[80px] flex">
-            <div className="m-auto">Set</div>
-        </div>
-        <div className="flex-grow"/>
-        <div className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[150px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[150px] flex"}>
+        <div className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[120px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[120px] flex"}>
           {!activeTransaction ? (
-            <div className="m-auto">Start Tasks</div>
+            <div onClick={handleStartTasks} className="m-auto">Start Tasks</div>
           ):(
             <div className="m-auto">Cancel</div>
           )}
         </div>
+        <div className="flex-grow"/>
+        <div className="my-auto">force gwei</div>
+          <form className="flex text-[0.75rem]">
+            <input
+              value={forceGweiAmount}
+              type='number'
+              onChange={handleForceGwei}
+              placeholder="gwei"
+              className="w-10 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
+            />
+          </form>
+        <div className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[80px] flex">
+            <div className="m-auto">Set</div>
+        </div>
       </div>
       <div className="h-1 w-full bg-gray-500 mt-3 rounded-full mb-5"/>
-      <div className="flex px-2 rounded-lg ml-2 mr-[83px]">
-        <div className="grid grid-cols-5 flex-grow gap-5 text-sm">
+      <div className="flex px-2 rounded-lg ml-2 mr-[50px]">
+        <div className="grid grid-cols-6 flex-grow gap-5 text-sm">
           <div>contract</div>
           <div>cost</div>
-          <div>function</div>
-          <div>args</div>
+          <div>hex data</div>
           <div>wallet</div>
+          <div className="grid-cols-2">status</div>
         </div>
       </div>
       <div className="overflow-y-scroll flex-grow">
@@ -300,25 +346,13 @@ const Tasks = () => {
               </form>
               </div>
               <div>
-                <div>Function</div>
+                <div>Function Hex</div>
                 <form className="flex gap-3 text-[0.75rem]">
                   <input
-                    value={newTaskFunction}
+                    value={newTaskHex}
                     type="text"
-                    onChange={handleSetFunction}
-                    placeholder="contract function"
-                    className="w-64 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
-                  />
-                </form>
-              </div>
-              <div>
-                <div>Args</div>
-                <form className="flex gap-3 text-[0.75rem]">
-                  <input
-                    value={newTaskArgs}
-                    type="text"
-                    onChange={handleSetArgs}
-                    placeholder="function parameters"
+                    onChange={handleSetHex}
+                    placeholder="contract function hex"
                     className="w-64 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800"
                   />
                 </form>
