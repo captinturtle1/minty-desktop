@@ -87,12 +87,13 @@ export function removeTask(indexes) {
 
 
 
-export async function startTasks(tasks) {
+export async function startTasks(tasks, taskStatuses, setTaskStatuses) {
 	console.log(tasks, tasks.length);
 	return new Promise(async (resolve) => {
 		console.log("Sending transactions");
 		let provider = ethers.providers.getDefaultProvider(await getRpc());
 		for (let i = 0; i < tasks.length; i++) {
+			let newStatusArray = taskStatuses;
 			try {
 				let wallet = new ethers.Wallet(tasks[i].pk, provider);
 				let txCost = ethers.utils.parseUnits(tasks[i].cost, "ether");
@@ -132,17 +133,33 @@ export async function startTasks(tasks) {
 						}
 					}
 				}
-				let receipt = await wallet.sendTransaction(txObject);
-				console.log(receipt);
-				sendWebhook(`sent https://goerli.etherscan.io/tx/${receipt.hash}`);
-				receipt.wait(1).then(response => {
-					console.log(response)
-					sendWebhook(`confirmed https://goerli. etherscan.io/tx/${response.transactionHash}`);
-					if (i == tasks.length - 1) {
-						resolve("tx's confirmed");
-					}
-				}).catch(console.log);
+				newStatusArray.splice(i, 1, "Sending tx");
+				setTaskStatuses([...newStatusArray]);
+
+				wallet.sendTransaction(txObject).then(receipt => {
+					newStatusArray.splice(i, 1, "Pending");
+					setTaskStatuses([...newStatusArray]);
+					console.log(receipt);
+
+					sendWebhook(`sent https://goerli.etherscan.io/tx/${receipt.hash}`);
+					receipt.wait(1).then(response => {
+						newStatusArray.splice(i, 1, "Confirmed");
+						setTaskStatuses([...newStatusArray]);
+						console.log(response)
+						sendWebhook(`confirmed https://goerli.etherscan.io/tx/${response.transactionHash}`);
+						if (i == tasks.length - 1) {
+							resolve("tx's confirmed");
+						}
+					}).catch(console.log);
+				}).catch(err => {
+					newStatusArray.splice(i, 1, "Tx will fail");
+					setTaskStatuses([...newStatusArray]);
+					console.log(err);
+				});
+				
 			} catch(err) {
+				newStatusArray.splice(i, 1, "Error");
+				setTaskStatuses([...newStatusArray]);
 				console.log(err);
 			}
 		}

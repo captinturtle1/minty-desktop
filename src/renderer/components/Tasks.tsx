@@ -38,11 +38,6 @@ const Tasks = ({taskStatuses, setTaskStatuses}) => {
   const getData = async () => new Promise(async (resolve, reject) => {
     getTasks().then((taskResponse:any) => {
       setTasks([...JSON.parse(taskResponse).tasks]);
-      let newStatusArray:any = [];
-      for (let i = 0; i < JSON.parse(taskResponse).tasks.length; i++) {
-        newStatusArray.push("Idle");
-      }
-      setTaskStatuses([...newStatusArray]);
       getWallets().then((walletResponse:any) => {
         setWallets([...JSON.parse(walletResponse).wallets]);
         resolve("data retrieved");
@@ -241,12 +236,7 @@ const Tasks = ({taskStatuses, setTaskStatuses}) => {
     }
     setTaskStatuses([...newStatusArray]);
 
-    startTasks(tasks).then(response => {
-      let newStatusArray:any = [];
-      for (let i = 0; i < tasks.length; i++) {
-        newStatusArray.push("Confirmed");
-      }
-      setTaskStatuses([...newStatusArray]);
+    startTasks(tasks, taskStatuses, setTaskStatuses).then(response => {
       console.log(response);
     }).catch(err => {
       console.log(err);
