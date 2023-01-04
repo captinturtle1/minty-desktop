@@ -4,7 +4,7 @@ import { FaTrash, FaKey } from 'react-icons/fa';
 import { AiOutlineLoading3Quarters } from 'react-icons/ai'
 import { BiRefresh } from 'react-icons/bi'
 
-const Wallets = () => {
+const Wallets = ({walletsBalances, setWalletsBalances}) => {
   const [wallets, setWallets] = useState<any>([]);
 
   const [createWalletName, setCreateWalletName] = useState('');
@@ -14,7 +14,6 @@ const Wallets = () => {
   const [selectedPk, setSelectedPk] = useState('');
   const [amountToDisperse, setAmountToDisperse] = useState<number>(0);
   const [walletsSelected, setWalletsSelected] = useState<any>([]);
-  const [walletsBalances, setWalletsBalances] = useState<any>([]);
   const [activeTransaction, setActiveTransaction] = useState(false);
   const [importInput, setImportInput] = useState<string>();
   const [deleteAllOpen, setDeleteAllOpen] = useState(false);

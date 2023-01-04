@@ -5,11 +5,10 @@ async function getWallets() {
 	return await window.electron.ipcRenderer.getWallets();
 }
 
-const Stats = () => {
+const Stats = ({results, setResults}) => {
   const [wallets, setWallets] = useState<any>([]);
 
   const [contract, setContract] = useState<string>();
-  const [results, setResults] = useState<any>([]);
 
   useEffect(() => {
     getData();

@@ -10,6 +10,12 @@ import Tools from './Tools';
 const Maincontent = () => {
   const [currentOpen, setCurrentOpen] = useState(0);
 
+  const [walletsBalances, setWalletsBalances] = useState<any>([]);
+
+  const [results, setResults] = useState<any>([]);
+
+  const[taskStatuses, setTaskStatuses] = useState<any>([]);
+
   return (
     <div className="select-none">
       <div className="fixed bg-gray-800 w-56 h-screen">
@@ -27,9 +33,9 @@ const Maincontent = () => {
       </div>
       <div className="bg-gray-600 h-screen">
         <div className="pt-10 pl-56 h-full">
-          {currentOpen === 0 ? (<Tasks/>):(<></>)}
-          {currentOpen === 1 ? (<Wallets/>):(<></>)}
-          {currentOpen === 2 ? (<Stats/>):(<></>)}
+          {currentOpen === 0 ? (<Tasks taskStatuses={taskStatuses} setTaskStatuses={setTaskStatuses}/>):(<></>)}
+          {currentOpen === 1 ? (<Wallets walletsBalances={walletsBalances} setWalletsBalances={setWalletsBalances}/>):(<></>)}
+          {currentOpen === 2 ? (<Stats results={results} setResults={setResults}/>):(<></>)}
           {currentOpen === 3 ? (<Tools/>):(<></>)}
           {currentOpen === 4 ? (<Settings/>):(<></>)}
         </div>

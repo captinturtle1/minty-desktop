@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, getWallets, startTasks } from './functionalStuff/taskManager';
 import { FaTrash } from 'react-icons/fa';
 
-const Tasks = () => {
+const Tasks = ({taskStatuses, setTaskStatuses}) => {
   const [tasks, setTasks] = useState<any>([]);
   const [wallets, setWallets] = useState<any>([]);
 
@@ -17,17 +17,17 @@ const Tasks = () => {
   const [newTaskCost, setNewTaskCost] = useState<number>();
   const [newTaskHex, setNewTaskHex] = useState<string>();
 
-  const [newTaskGasMode, setNewTaskGasMode] = useState<string>();
-  const [newTaskLimitMode, setNewTaskLimitMode] = useState<string>();
+  const [newTaskGasMode, setNewTaskGasMode] = useState<string>("Auto");
+  const [newTaskLimitMode, setNewTaskLimitMode] = useState<string>("Auto");
 
-  const [newTaskSetGas, setNewTaskSetGas] = useState<number>();
-  const [newTaskSetPrio, setNewTaskSetPrio] = useState<number>();
-  const [newTaskSetLimit, setNewTaskSetLimit] = useState<number>();
+  const [newTaskSetGas, setNewTaskSetGas] = useState<number>(0);
+  const [newTaskSetPrio, setNewTaskSetPrio] = useState<number>(0);
+  const [newTaskSetLimit, setNewTaskSetLimit] = useState<number>(0);
 
   const [activeTransaction, setActiveTransaction] = useState(false);
   const [forceGweiAmount, setForceGweiAmount] = useState(0);
 
-  const[taskStatuses, setTaskStatuses] = useState<any>([]);
+  
 
   useEffect(() => {
     getData().then((response:any) => {
@@ -40,7 +40,7 @@ const Tasks = () => {
       setTasks([...JSON.parse(taskResponse).tasks]);
       let newStatusArray:any = [];
       for (let i = 0; i < JSON.parse(taskResponse).tasks.length; i++) {
-        newStatusArray.push("Doing nothing...");
+        newStatusArray.push("Idle");
       }
       setTaskStatuses([...newStatusArray]);
       getWallets().then((walletResponse:any) => {
@@ -60,6 +60,11 @@ const Tasks = () => {
     let firstSix = address.slice(0, 6);
     let lastFour = address.slice(address.length - 4, address.length);
     return `${firstSix}...${lastFour}`;
+  }
+
+  const truncateHexData = (hexData) => {
+    let first = hexData.slice(0, 10);
+    return `${first}`;
   }
 
   const selectAddress = (index) => {
@@ -91,10 +96,8 @@ const Tasks = () => {
     indexes[0] = index;
     removeTask(indexes).then((response:any) => {
       setTasks([...JSON.parse(response).tasks]);
-      let newStatusArray:any = [];
-      for (let i = 0; i < JSON.parse(response).tasks.length; i++) {
-        newStatusArray.push("Doing nothing...");
-      }
+      let newStatusArray:any = taskStatuses;
+      newStatusArray.splice(index, 1);
       setTaskStatuses([...newStatusArray]);
     });
   }
@@ -104,8 +107,8 @@ const Tasks = () => {
     removeTask(tasksSelected).then((response:any) => {
       setTasks([...JSON.parse(response).tasks]);
       let newStatusArray:any = [];
-      for (let i = 0; i < JSON.parse(response).tasks.length; i++) {
-        newStatusArray.push("Doing nothing...");
+      for (let i = 0; i < tasksSelected.length; i++) {
+        newStatusArray.splice(tasksSelected[i], 1);
       }
       setTaskStatuses([...newStatusArray]);
     });
@@ -120,7 +123,7 @@ const Tasks = () => {
     removeTask(allTasksArray).then((response:any) => {
       setTasks([...JSON.parse(response).tasks]);
       let newStatusArray:any = [];
-      setTaskStatuses([...newStatusArray]);
+      setTaskStatuses([...[newStatusArray]]);
     });
   }
 
@@ -144,9 +147,9 @@ const Tasks = () => {
           let data = JSON.parse(reader.result);
           importAndStoreTaskFromFile(data).then((response:any) => {
             setTasks([...JSON.parse(response).tasks]);
-            let newStatusArray:any = [];
-            for (let i = 0; i < JSON.parse(response).tasks.length; i++) {
-              newStatusArray.push("Doing nothing...");
+            let newStatusArray:any = taskStatuses;
+            for (let i = 0; i < data.tasks.length; i++) {
+              newStatusArray.push("Idle");
             }
             setTaskStatuses([...newStatusArray]);
           });
@@ -182,9 +185,9 @@ const Tasks = () => {
     setWalletsSelected([...[]]);
     createAndStoreTask(createdTasksArray).then((response:any) => {
       setTasks([...JSON.parse(response).tasks]);
-      let newStatusArray:any = [];
-      for (let i = 0; i < JSON.parse(response).tasks.length; i++) {
-        newStatusArray.push("Doing nothing...");
+      let newStatusArray:any = taskStatuses;
+      for (let i = 0; i < walletsSelected.length; i++) {
+        newStatusArray.push("Idle");
       }
       setTaskStatuses([...newStatusArray]);
     });
@@ -231,7 +234,6 @@ const Tasks = () => {
   };
 
   const handleStartTasks = () => {
-    setActiveTransaction(true);
 
     let newStatusArray:any = [];
     for (let i = 0; i < tasks.length; i++) {
@@ -246,10 +248,8 @@ const Tasks = () => {
       }
       setTaskStatuses([...newStatusArray]);
       console.log(response);
-      setActiveTransaction(false);
     }).catch(err => {
       console.log(err);
-      setActiveTransaction(false);
     });
   }
   
@@ -260,7 +260,7 @@ const Tasks = () => {
       <div className="grid grid-cols-6 flex-grow gap-5 text-sm">
         <div>{truncateAddress(taskObject.contract)}</div>
         <div>{taskObject.cost}</div>
-        <div>{truncateAddress(taskObject.hex)}</div>
+        <div>{truncateHexData(taskObject.hex)}</div>
         <div>{truncateAddress(taskObject.wallet)}</div>
         <div className="col-span-2">{taskStatuses[index]}</div>
       </div>
@@ -273,11 +273,14 @@ const Tasks = () => {
       <div className="text-3xl font-semibold">Tasks</div>
       <div className="flex gap-5 mt-2 h-10">
         <div className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[120px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[120px] flex"}>
+          <div onClick={handleStartTasks} className="m-auto">Start Tasks</div>
+          {/*
           {!activeTransaction ? (
             <div onClick={handleStartTasks} className="m-auto">Start Tasks</div>
           ):(
             <div className="m-auto">Cancel</div>
           )}
+          */}
         </div>
         <div className="flex-grow"/>
         <div className="my-auto">force gwei</div>
@@ -299,7 +302,7 @@ const Tasks = () => {
         <div className="grid grid-cols-6 flex-grow gap-5 text-sm">
           <div>contract</div>
           <div>cost</div>
-          <div>hex data</div>
+          <div>function hex</div>
           <div>wallet</div>
           <div className="grid-cols-2">status</div>
         </div>

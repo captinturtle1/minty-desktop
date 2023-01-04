@@ -6,6 +6,32 @@ const getRpc = async () => {
 	return settings.rpc;
 };
 
+const getWebhook = async () => {
+	let settings:any = await window.electron.ipcRenderer.getSettings();
+	settings = JSON.parse(settings);
+	return settings.webhook;
+};
+
+const sendWebhook = async (message: string) => {
+	let webhook = await getWebhook();
+    fetch(
+      webhook, {
+        method: "POST",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(
+          {
+            username: "Minty",
+            avatar_url: "https://i.kym-cdn.com/entries/icons/original/000/037/848/cover2.jpg",
+            content: message
+          }
+        )
+      }
+    );
+    console.log("webhook sent");
+  }
+
 export async function getTasks() {
 	return await window.electron.ipcRenderer.getTasks();
 }
@@ -63,72 +89,63 @@ export function removeTask(indexes) {
 
 export async function startTasks(tasks) {
 	console.log(tasks, tasks.length);
-	return new Promise(async (resolve, reject) => {
+	return new Promise(async (resolve) => {
 		console.log("Sending transactions");
 		let provider = ethers.providers.getDefaultProvider(await getRpc());
 		for (let i = 0; i < tasks.length; i++) {
 			try {
 				let wallet = new ethers.Wallet(tasks[i].pk, provider);
 				let txCost = ethers.utils.parseUnits(tasks[i].cost, "ether");
-				let gasInWei = ethers.utils.parseUnits(tasks[i].userSetGas, "gwei");
-				let prioInWei = ethers.utils.parseUnits(tasks[i].userSetPrio, "gwei");
-				
+				let txObject:any;
 				if (tasks[i].gasMode == "Auto") {
 					if (tasks[i].limitMode == "Auto") {
-						let receipt = await wallet.sendTransaction({
+						txObject = {
 							to: tasks[i].contract,
 							value: txCost,
 							data: tasks[i].hex
-						});
-						console.log(receipt);
-						receipt.wait(1).then(response => {
-							console.log(response)
-						}).catch(console.log);
+						}
 					} else {
-						let receipt = await wallet.sendTransaction({
+						txObject = {
 							to: tasks[i].contract,
 							value: txCost,
 							data: tasks[i].hex,
 							gasLimit: tasks[i].userSetLimit
-						});
-						console.log(receipt);
-						receipt.wait(1).then(response => {
-							console.log(response)
-						}).catch(console.log);
+						}
 					}
 				} else {
 					if (tasks[i].limitMode == "Auto") {
-						let receipt = await wallet.sendTransaction({
+						txObject = {
 							to: tasks[i].contract,
 							value: txCost,
 							data: tasks[i].hex,
-							maxFeePerGas: gasInWei,
-							maxPriorityFeePerGas: prioInWei
-						});
-						console.log(receipt);
-						receipt.wait(1).then(response => {
-							console.log(response)
-						}).catch(console.log);
+							maxFeePerGas: ethers.utils.parseUnits(tasks[i].userSetGas, "gwei"),
+							maxPriorityFeePerGas: ethers.utils.parseUnits(tasks[i].userSetPrio, "gwei")
+						}
 					} else {
-						let receipt = await wallet.sendTransaction({
+						txObject = {
 							to: tasks[i].contract,
 							value: txCost,
 							data: tasks[i].hex,
-							maxFeePerGas: gasInWei,
-							maxPriorityFeePerGas: prioInWei,
+							maxFeePerGas: ethers.utils.parseUnits(tasks[i].userSetGas, "gwei"),
+							maxPriorityFeePerGas: ethers.utils.parseUnits(tasks[i].userSetPrio, "gwei"),
 							gasLimit: tasks[i].userSetLimit
-						});
-						console.log(receipt);
-						receipt.wait(1).then(response => {
-							console.log(response)
-						}).catch(console.log);
+						}
 					}
 				}
+				let receipt = await wallet.sendTransaction(txObject);
+				console.log(receipt);
+				sendWebhook(`sent https://goerli.etherscan.io/tx/${receipt.hash}`);
+				receipt.wait(1).then(response => {
+					console.log(response)
+					sendWebhook(`confirmed https://goerli. etherscan.io/tx/${response.transactionHash}`);
+					if (i == tasks.length - 1) {
+						resolve("tx's confirmed");
+					}
+				}).catch(console.log);
 			} catch(err) {
 				console.log(err);
 			}
 		}
-		resolve("Sent");
 	});
 }
 
