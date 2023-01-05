@@ -136,12 +136,24 @@ export async function startTask(task) {
 	});
 }
 
-export function cancelTask(task) {
+export function cancelTask(task, taskStatus) {
+	return new Promise(async (resolve, reject) => {
+		let provider = ethers.providers.getDefaultProvider(await getRpc());
+		let wallet = new ethers.Wallet(task.pk, provider);
+		let txObject = {
+			to: wallet.address,
+			value: 0,
+			nonce: taskStatus.nonce,
+			maxFeePerGas: (taskStatus.maxFeePerGas).mul(2),
+			maxPriorityFeePerGas: (taskStatus.maxPriorityFeePerGas).mul(2)
+		}
 
-}
-
-export function stopTask(task) {
-
+		wallet.sendTransaction(txObject).then(receipt => {
+			resolve(receipt);
+		}).catch(err => {
+			reject(err);
+		});
+	});
 }
 
 export function speedUpTask(task) {

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, sendWebhook, getWallets, startTask } from './functionalStuff/taskManager';
+import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, sendWebhook, getWallets, startTask, cancelTask } from './functionalStuff/taskManager';
 import { FaTrash, FaStop, FaBan } from 'react-icons/fa';
 
 let tasksKeepRunning:boolean[] = [];
@@ -263,7 +263,7 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
             console.log(receipt);
             sendWebhook(`sent https://goerli.etherscan.io/tx/${receipt.hash}`);
 
-            newStatusArray[i] = "Sending tx";
+            newStatusArray[i] = "Pending";
 			    	setTaskStatuses([...newStatusArray]);
 
             newTxInfoArray[i] = receipt;
@@ -279,6 +279,8 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
               newTxInfoArray[i] = response;
               setTxInfo([...newTxInfoArray]);
 
+            }).catch(err => {
+              console.log(err);
             })
           }).catch(err => {
             newStatusArray[i] = "Tx will fail";
@@ -313,10 +315,6 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
     setTxInfo([...newTxInfoArray]);
   }
 
-  const handleCancelTask = (e, index) => {
-    e.stopPropagation();
-  }
-
   const handleStopAllTasks = () => {
     let newStatusArray:any = taskStatuses;
     let newTxInfoArray:any = txInfo;
@@ -328,6 +326,53 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
     setTaskStatuses([...newStatusArray]);
     setTxInfo([...newTxInfoArray]);
   }
+
+  const handleCancelTask = (e, index) => {
+    e.stopPropagation();
+    console.log("attempting cancel");
+    tasksKeepRunning[index] = false;
+    if (typeof(txInfo[index] == Object)) {
+      if (txInfo[index].confirmations == 0) {
+        console.log("parameters met");
+        let newStatusArray:any = taskStatuses;
+        let newTxInfoArray:any = txInfo;
+        cancelTask(tasks[index], txInfo[index]).then((receipt:any) => {
+          console.log(receipt);
+          sendWebhook(`cancel tx https://goerli.etherscan.io/tx/${receipt.hash}`);
+
+          newStatusArray[index] = "Canceling";
+			    setTaskStatuses([...newStatusArray]);
+
+          newTxInfoArray[index] = receipt;
+          setTxInfo([...newTxInfoArray]);
+
+          receipt.wait(1).then(response => {
+            console.log(response);
+            sendWebhook(`cancel confirmed https://goerli.etherscan.io/tx/${response.transactionHash}`);
+
+            newStatusArray[index] = "Canceled";
+			    	setTaskStatuses([...newStatusArray]);
+
+            newTxInfoArray[index] = response;
+            setTxInfo([...newTxInfoArray]);
+
+          }).catch(err => {
+            console.log(err);
+          })
+        }).catch(err => {
+          console.log(err);
+        })
+      }
+    }
+  }
+
+  const handleCancelAllTasks = () => {
+    for (let i = 0; i < tasks.length; i++) {
+
+    }
+  }
+
+  
   
   
 
@@ -355,6 +400,9 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
         </div>
         <div onClick={handleStopAllTasks} className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[120px] flex">
           <div className="m-auto">Stop Tasks</div>
+        </div>
+        <div onClick={handleCancelAllTasks} className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[120px] flex">
+          <div className="m-auto">Cancel Tasks</div>
         </div>
         <div className="flex-grow"/>
         <div className="my-auto">force gwei</div>
