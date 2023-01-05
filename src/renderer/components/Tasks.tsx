@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, getWallets, startAllTasks, stopAllTasks } from './functionalStuff/taskManager';
-import { FaTrash } from 'react-icons/fa';
+import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, sendWebhook, getWallets, startTask } from './functionalStuff/taskManager';
+import { FaTrash, FaStop, FaBan } from 'react-icons/fa';
+
+let tasksKeepRunning:boolean[] = [];
 
 const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
   const [tasks, setTasks] = useState<any>([]);
@@ -24,7 +26,6 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
   const [newTaskSetPrio, setNewTaskSetPrio] = useState<number>(0);
   const [newTaskSetLimit, setNewTaskSetLimit] = useState<number>(0);
 
-  const [activeTransaction, setActiveTransaction] = useState(false);
   const [forceGweiAmount, setForceGweiAmount] = useState(0);
 
   
@@ -92,8 +93,12 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
     removeTask(indexes).then((response:any) => {
       setTasks([...JSON.parse(response).tasks]);
       let newStatusArray:any = taskStatuses;
+      let newTxInfoArray:any = txInfo;
       newStatusArray.splice(index, 1);
+      newTxInfoArray.splice(index, 1);
+      tasksKeepRunning.splice(index, 1);
       setTaskStatuses([...newStatusArray]);
+      setTxInfo([...newTxInfoArray]);
     });
   }
 
@@ -101,11 +106,15 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
     setTasksSelected([...[]]);
     removeTask(tasksSelected).then((response:any) => {
       setTasks([...JSON.parse(response).tasks]);
-      let newStatusArray:any = [];
+      let newStatusArray:any = taskStatuses;
+      let newTxInfoArray:any = txInfo;
       for (let i = 0; i < tasksSelected.length; i++) {
         newStatusArray.splice(tasksSelected[i], 1);
+        newTxInfoArray.splice(tasksSelected[i], 1);
+        tasksKeepRunning.splice(tasksSelected[i], 1);
       }
       setTaskStatuses([...newStatusArray]);
+      setTxInfo([...newTxInfoArray]);
     });
   }
 
@@ -143,10 +152,14 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
           importAndStoreTaskFromFile(data).then((response:any) => {
             setTasks([...JSON.parse(response).tasks]);
             let newStatusArray:any = taskStatuses;
-            for (let i = 0; i < data.tasks.length; i++) {
+            let newTxInfoArray:any = [];
+            for (let i = 0; i < walletsSelected.length; i++) {
               newStatusArray.push("Idle");
+              newTxInfoArray.push(0);
+              tasksKeepRunning.push(true);
             }
             setTaskStatuses([...newStatusArray]);
+            setTxInfo([...newTxInfoArray]);
           });
           setImportOpen(false);
         } catch (err) {
@@ -181,10 +194,14 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
     createAndStoreTask(createdTasksArray).then((response:any) => {
       setTasks([...JSON.parse(response).tasks]);
       let newStatusArray:any = taskStatuses;
+      let newTxInfoArray:any = txInfo;
       for (let i = 0; i < walletsSelected.length; i++) {
         newStatusArray.push("Idle");
+        newTxInfoArray.push(0);
+        tasksKeepRunning.push(true);
       }
       setTaskStatuses([...newStatusArray]);
+      setTxInfo([...newTxInfoArray]);
     });
   }
 
@@ -229,35 +246,102 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
   };
 
   const handleStartTasks = () => {
+    let newStatusArray:any = taskStatuses;
+    let newTxInfoArray:any = txInfo;
 
-    let newStatusArray:any = [];
     for (let i = 0; i < tasks.length; i++) {
-      newStatusArray.push("Starting");
-    }
-    setTaskStatuses([...newStatusArray]);
+      tasksKeepRunning[i] = true;
+      const sendTask = () => {
+        newStatusArray[i] = "Starting";
+        newTxInfoArray[i] = 1;
+        setTaskStatuses([...newStatusArray]);
+        setTxInfo([...newTxInfoArray]);
 
-    startAllTasks(tasks, taskStatuses, setTaskStatuses, txInfo, setTxInfo).then(response => {
-      console.log(response);
-    }).catch(err => {
-      console.log(err);
-    });
+        console.log(tasksKeepRunning);
+        if (tasksKeepRunning[i]) {
+          startTask(tasks[i]).then((receipt:any) => {
+            console.log(receipt);
+            sendWebhook(`sent https://goerli.etherscan.io/tx/${receipt.hash}`);
+
+            newStatusArray[i] = "Sending tx";
+			    	setTaskStatuses([...newStatusArray]);
+
+            newTxInfoArray[i] = receipt;
+            setTxInfo([...newTxInfoArray]);
+
+            receipt.wait(1).then(response => {
+              console.log(response);
+              sendWebhook(`confirmed https://goerli.etherscan.io/tx/${response.transactionHash}`);
+
+              newStatusArray[i] = "Confirmed";
+			    		setTaskStatuses([...newStatusArray]);
+
+              newTxInfoArray[i] = response;
+              setTxInfo([...newTxInfoArray]);
+
+            })
+          }).catch(err => {
+            newStatusArray[i] = "Tx will fail";
+			    	setTaskStatuses([...newStatusArray]);
+            console.log(err);
+            setTimeout(() => {
+              sendTask();
+            }, 5000)
+          });
+        } else {
+          newStatusArray[i] = "Stopped";
+			    setTaskStatuses([...newStatusArray]);
+
+          newTxInfoArray[i] = 0;
+          setTxInfo([...newTxInfoArray]);
+        }
+      }
+      sendTask();
+    }
   }
 
-  const handleStopTasks = () => {
-    stopAllTasks(tasks, taskStatuses, setTaskStatuses, txInfo, setTxInfo);
+  const handleStopTask = (e, index) => {
+    e.stopPropagation();
+    let newStatusArray:any = taskStatuses;
+    let newTxInfoArray:any = txInfo;
+
+    newStatusArray[index] = "Stopping";
+    newTxInfoArray[index] = 3;
+    tasksKeepRunning[index] = false;
+
+    setTaskStatuses([...newStatusArray]);
+    setTxInfo([...newTxInfoArray]);
+  }
+
+  const handleCancelTask = (e, index) => {
+    e.stopPropagation();
+  }
+
+  const handleStopAllTasks = () => {
+    let newStatusArray:any = taskStatuses;
+    let newTxInfoArray:any = txInfo;
+    for (let i = 0; i < tasks.length; i++) {
+      newStatusArray[i] = "Stopping";
+      newTxInfoArray[i] = 3;
+      tasksKeepRunning[i] = false;
+    }
+    setTaskStatuses([...newStatusArray]);
+    setTxInfo([...newTxInfoArray]);
   }
   
   
 
   const tasksList = tasks.map((taskObject, index: number) =>
     <div onClick={() => selectTask(index)} key={index} className={tasksSelected.includes(index) ? "flex p-2 bg-gray-400 bg-opacity-50 rounded-lg my-1 mx-2 transition-all" : "flex p-2 bg-gray-500 bg-opacity-50 rounded-lg my-1 mx-2 transition-all"}>
-      <div className="grid grid-cols-6 flex-grow gap-5 text-sm">
+      <div className="grid grid-cols-5 flex-grow gap-5 text-sm">
         <div>{truncateAddress(taskObject.contract)}</div>
         <div>{taskObject.cost}</div>
         <div>{truncateHexData(taskObject.hex)}</div>
         <div>{truncateAddress(taskObject.wallet)}</div>
-        <div className="col-span-2">{taskStatuses[index]}</div>
+        <div>{taskStatuses[index]}</div>
       </div>
+      <FaStop onClick={(e) => handleStopTask(e, index)} className="mx-2 m-auto text-white hover:text-gray-200 active:text-gray-300 cursor-pointer transition-all"/>
+      <FaBan onClick={(e) => handleCancelTask(e, index)} className="mx-2 m-auto text-white hover:text-gray-200 active:text-gray-300 cursor-pointer transition-all"/>
       <FaTrash onClick={(e) => handleRemoveTask(e, index)} className="mx-2 m-auto text-white hover:text-gray-200 active:text-gray-300 cursor-pointer transition-all"/>
     </div>
   );
@@ -266,18 +350,11 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
     <div className="text-white px-8 pt-8 h-full flex flex-col">
       <div className="text-3xl font-semibold">Tasks</div>
       <div className="flex gap-5 mt-2 h-10">
-        <div className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[120px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[120px] flex"}>
-          <div onClick={handleStartTasks} className="m-auto">Start Tasks</div>
-          {/*
-          {!activeTransaction ? (
-            <div onClick={handleStartTasks} className="m-auto">Start Tasks</div>
-          ):(
-            <div className="m-auto">Cancel</div>
-          )}
-          */}
+        <div onClick={handleStartTasks} className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[120px] flex">
+          <div className="m-auto">Start Tasks</div>
         </div>
-        <div className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[120px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[120px] flex"}>
-          <div onClick={handleStopTasks} className="m-auto">Stop Tasks</div>
+        <div onClick={handleStopAllTasks} className="bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[120px] flex">
+          <div className="m-auto">Stop Tasks</div>
         </div>
         <div className="flex-grow"/>
         <div className="my-auto">force gwei</div>
@@ -295,13 +372,13 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
         </div>
       </div>
       <div className="h-1 w-full bg-gray-500 mt-3 rounded-full mb-5"/>
-      <div className="flex px-2 rounded-lg ml-2 mr-[50px]">
-        <div className="grid grid-cols-6 flex-grow gap-5 text-sm">
+      <div className="flex px-2 rounded-lg ml-2 mr-[115px]">
+        <div className="grid grid-cols-5 flex-grow gap-5 text-sm">
           <div>contract</div>
           <div>cost</div>
           <div>function hex</div>
           <div>wallet</div>
-          <div className="grid-cols-2">status</div>
+          <div>status</div>
         </div>
       </div>
       <div className="overflow-y-scroll flex-grow">

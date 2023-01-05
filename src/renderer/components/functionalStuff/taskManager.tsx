@@ -1,3 +1,4 @@
+import { rejects } from 'assert';
 import { ethers } from 'ethers';
 
 const getRpc = async () => {
@@ -12,7 +13,7 @@ const getWebhook = async () => {
 	return settings.webhook;
 };
 
-const sendWebhook = async (message: string) => {
+export const sendWebhook = async (message: string) => {
 	let webhook = await getWebhook();
     fetch(
       webhook, {
@@ -29,7 +30,6 @@ const sendWebhook = async (message: string) => {
         )
       }
     );
-    console.log("webhook sent");
   }
 
 export async function getTasks() {
@@ -87,138 +87,63 @@ export function removeTask(indexes) {
 
 
 
-export async function startAllTasks(tasks, taskStatuses, setTaskStatuses, txInfo, setTxInfo) {
-	console.log(tasks, tasks.length);
-	return new Promise(async (resolve) => {
-		console.log("Sending transactions");
+export async function startTask(task) {
+	return new Promise(async (resolve, reject) => {
 		let provider = ethers.providers.getDefaultProvider(await getRpc());
-		for (let i = 0; i < tasks.length; i++) {
-			let newStatusArray = taskStatuses;
-			let newTxInfo = txInfo;
-			try {
-				let wallet = new ethers.Wallet(tasks[i].pk, provider);
-				let txCost = ethers.utils.parseUnits(tasks[i].cost, "ether");
-				let txObject:any;
-				if (tasks[i].gasMode == "Auto") {
-					if (tasks[i].limitMode == "Auto") {
-						txObject = {
-							to: tasks[i].contract,
-							value: txCost,
-							data: tasks[i].hex
-						}
-					} else {
-						txObject = {
-							to: tasks[i].contract,
-							value: txCost,
-							data: tasks[i].hex,
-							gasLimit: tasks[i].userSetLimit
-						}
-					}
-				} else {
-					if (tasks[i].limitMode == "Auto") {
-						txObject = {
-							to: tasks[i].contract,
-							value: txCost,
-							data: tasks[i].hex,
-							maxFeePerGas: ethers.utils.parseUnits(tasks[i].userSetGas, "gwei"),
-							maxPriorityFeePerGas: ethers.utils.parseUnits(tasks[i].userSetPrio, "gwei")
-						}
-					} else {
-						txObject = {
-							to: tasks[i].contract,
-							value: txCost,
-							data: tasks[i].hex,
-							maxFeePerGas: ethers.utils.parseUnits(tasks[i].userSetGas, "gwei"),
-							maxPriorityFeePerGas: ethers.utils.parseUnits(tasks[i].userSetPrio, "gwei"),
-							gasLimit: tasks[i].userSetLimit
-						}
-					}
+		let wallet = new ethers.Wallet(task.pk, provider);
+		let txCost = ethers.utils.parseUnits(task.cost, "ether");
+		let txObject:any;
+		if (task.gasMode == "Auto") {
+			if (task.limitMode == "Auto") {
+				txObject = {
+					to: task.contract,
+					value: txCost,
+					data: task.hex
 				}
-				
-
-				function sendTask() {
-					if (newTxInfo[i] != 3) {
-						newStatusArray.splice(i, 1, "Sending tx");
-						setTaskStatuses([...newStatusArray]);
-
-						newTxInfo.splice(i, 1, 1);
-						setTxInfo([...newTxInfo]);
-
-						wallet.sendTransaction(txObject).then(receipt => {
-							newStatusArray.splice(i, 1, "Pending");
-							setTaskStatuses([...newStatusArray]);
-
-							newTxInfo.splice(i, 1, receipt);
-							setTxInfo([...newTxInfo]);
-
-							console.log(receipt);
-
-							sendWebhook(`sent https://goerli.etherscan.io/tx/${receipt.hash}`);
-							receipt.wait(1).then(response => {
-								newStatusArray.splice(i, 1, "Confirmed");
-								setTaskStatuses([...newStatusArray]);
-
-								newTxInfo.splice(i, 1, response);
-								setTxInfo([...newTxInfo]);
-						
-								console.log(response)
-								sendWebhook(`confirmed https://goerli.etherscan.io/tx/${response.transactionHash}`);
-								if (i == tasks.length - 1) {
-									resolve("tx's confirmed");
-								}
-							}).catch(console.log);
-						}).catch(err => {
-							newStatusArray.splice(i, 1, "Tx will fail");
-							setTaskStatuses([...newStatusArray]);
-
-							newTxInfo.splice(i, 1, 2);
-							setTxInfo([...newTxInfo]);
-
-							console.log(err);
-							setTimeout(() => {
-								sendTask();
-							}, 5000)
-						});
-					}
+			} else {
+				txObject = {
+					to: task.contract,
+					value: txCost,
+					data: task.hex,
+					gasLimit: task.userSetLimit
 				}
-				sendTask();
-				
-			} catch(err) {
-				newStatusArray.splice(i, 1, "Error");
-				setTaskStatuses([...newStatusArray]);
-				console.log(err);
+			}
+		} else {
+			if (task.limitMode == "Auto") {
+				txObject = {
+					to: task.contract,
+					value: txCost,
+					data: task.hex,
+					maxFeePerGas: ethers.utils.parseUnits(task.userSetGas, "gwei"),
+					maxPriorityFeePerGas: ethers.utils.parseUnits(task.userSetPrio, "gwei")
+				}
+			} else {
+				txObject = {
+					to: task.contract,
+					value: txCost,
+					data: task.hex,
+					maxFeePerGas: ethers.utils.parseUnits(task.userSetGas, "gwei"),
+					maxPriorityFeePerGas: ethers.utils.parseUnits(task.userSetPrio, "gwei"),
+					gasLimit: task.userSetLimit
+				}
 			}
 		}
+		wallet.sendTransaction(txObject).then(receipt => {
+			resolve(receipt);
+		}).catch(err => {
+			reject(err);
+		});
 	});
 }
 
-export function cancelAllTasks(tasks, taskStatuses, setTaskStatuses, txInfo, setTxInfo) {
-	let newStatusArray = taskStatuses;
-	let newTxInfo = txInfo;
-	for (let i = 0; i < tasks.length; i++) {
-		newStatusArray.splice(i, 1, "Canceling");
-		setTaskStatuses([...newStatusArray]);
+export function cancelTask(task) {
 
-		newTxInfo.splice(i, 1, 3);
-		setTxInfo([...newTxInfo]);
-	}
 }
 
-export function stopAllTasks(tasks, taskStatuses, setTaskStatuses, txInfo, setTxInfo) {
-	console.log("attempting stop");
-	let newStatusArray = taskStatuses;
-	let newTxInfo = txInfo;
-	for (let i = 0; i < tasks.length; i++) {
-		if (newTxInfo[i] == 1 || newTxInfo[i] == 2) {
-			newStatusArray.splice(i, 1, "Stopping");
-			setTaskStatuses([...newStatusArray]);
+export function stopTask(task) {
 
-			newTxInfo.splice(i, 1, 3);
-			setTxInfo([...newTxInfo]);
-		}
-	}
 }
 
-export function speedUpAllTasks(tasks) {
+export function speedUpTask(task) {
 	
 }
