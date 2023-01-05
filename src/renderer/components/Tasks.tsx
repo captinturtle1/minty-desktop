@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
-import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, getWallets, startTasks } from './functionalStuff/taskManager';
+import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, getWallets, startAllTasks, stopAllTasks } from './functionalStuff/taskManager';
 import { FaTrash } from 'react-icons/fa';
 
-const Tasks = ({taskStatuses, setTaskStatuses}) => {
+const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
   const [tasks, setTasks] = useState<any>([]);
   const [wallets, setWallets] = useState<any>([]);
 
@@ -236,11 +236,15 @@ const Tasks = ({taskStatuses, setTaskStatuses}) => {
     }
     setTaskStatuses([...newStatusArray]);
 
-    startTasks(tasks, taskStatuses, setTaskStatuses).then(response => {
+    startAllTasks(tasks, taskStatuses, setTaskStatuses, txInfo, setTxInfo).then(response => {
       console.log(response);
     }).catch(err => {
       console.log(err);
     });
+  }
+
+  const handleStopTasks = () => {
+    stopAllTasks(tasks, taskStatuses, setTaskStatuses, txInfo, setTxInfo);
   }
   
   
@@ -271,6 +275,9 @@ const Tasks = ({taskStatuses, setTaskStatuses}) => {
             <div className="m-auto">Cancel</div>
           )}
           */}
+        </div>
+        <div className={!activeTransaction ? "bg-cyan-500 hover:bg-cyan-400 active:bg-cyan-600 p-2 transition-all cursor-pointer rounded-xl w-[120px] flex" : "bg-cyan-500 p-2 transition-all rounded-xl w-[120px] flex"}>
+          <div onClick={handleStopTasks} className="m-auto">Stop Tasks</div>
         </div>
         <div className="flex-grow"/>
         <div className="my-auto">force gwei</div>

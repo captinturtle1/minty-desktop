@@ -15,6 +15,7 @@ const Maincontent = () => {
   const [results, setResults] = useState<any>([]);
 
   const[taskStatuses, setTaskStatuses] = useState<any>([]);
+  const[txInfo, setTxInfo] = useState<any>([]);
 
   return (
     <div className="select-none">
@@ -33,7 +34,7 @@ const Maincontent = () => {
       </div>
       <div className="bg-gray-600 h-screen">
         <div className="pt-10 pl-56 h-full">
-          {currentOpen === 0 ? (<Tasks taskStatuses={taskStatuses} setTaskStatuses={setTaskStatuses}/>):(<></>)}
+          {currentOpen === 0 ? (<Tasks taskStatuses={taskStatuses} setTaskStatuses={setTaskStatuses} txInfo={txInfo} setTxInfo={setTxInfo}/>):(<></>)}
           {currentOpen === 1 ? (<Wallets walletsBalances={walletsBalances} setWalletsBalances={setWalletsBalances}/>):(<></>)}
           {currentOpen === 2 ? (<Stats results={results} setResults={setResults}/>):(<></>)}
           {currentOpen === 3 ? (<Tools/>):(<></>)}

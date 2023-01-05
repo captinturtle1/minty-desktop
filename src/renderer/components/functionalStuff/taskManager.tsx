@@ -87,13 +87,14 @@ export function removeTask(indexes) {
 
 
 
-export async function startTasks(tasks, taskStatuses, setTaskStatuses) {
+export async function startAllTasks(tasks, taskStatuses, setTaskStatuses, txInfo, setTxInfo) {
 	console.log(tasks, tasks.length);
 	return new Promise(async (resolve) => {
 		console.log("Sending transactions");
 		let provider = ethers.providers.getDefaultProvider(await getRpc());
 		for (let i = 0; i < tasks.length; i++) {
 			let newStatusArray = taskStatuses;
+			let newTxInfo = txInfo;
 			try {
 				let wallet = new ethers.Wallet(tasks[i].pk, provider);
 				let txCost = ethers.utils.parseUnits(tasks[i].cost, "ether");
@@ -133,29 +134,54 @@ export async function startTasks(tasks, taskStatuses, setTaskStatuses) {
 						}
 					}
 				}
-				newStatusArray.splice(i, 1, "Sending tx");
-				setTaskStatuses([...newStatusArray]);
+				
 
-				wallet.sendTransaction(txObject).then(receipt => {
-					newStatusArray.splice(i, 1, "Pending");
-					setTaskStatuses([...newStatusArray]);
-					console.log(receipt);
-
-					sendWebhook(`sent https://goerli.etherscan.io/tx/${receipt.hash}`);
-					receipt.wait(1).then(response => {
-						newStatusArray.splice(i, 1, "Confirmed");
+				function sendTask() {
+					if (newTxInfo[i] != 3) {
+						newStatusArray.splice(i, 1, "Sending tx");
 						setTaskStatuses([...newStatusArray]);
-						console.log(response)
-						sendWebhook(`confirmed https://goerli.etherscan.io/tx/${response.transactionHash}`);
-						if (i == tasks.length - 1) {
-							resolve("tx's confirmed");
-						}
-					}).catch(console.log);
-				}).catch(err => {
-					newStatusArray.splice(i, 1, "Tx will fail");
-					setTaskStatuses([...newStatusArray]);
-					console.log(err);
-				});
+
+						newTxInfo.splice(i, 1, 1);
+						setTxInfo([...newTxInfo]);
+
+						wallet.sendTransaction(txObject).then(receipt => {
+							newStatusArray.splice(i, 1, "Pending");
+							setTaskStatuses([...newStatusArray]);
+
+							newTxInfo.splice(i, 1, receipt);
+							setTxInfo([...newTxInfo]);
+
+							console.log(receipt);
+
+							sendWebhook(`sent https://goerli.etherscan.io/tx/${receipt.hash}`);
+							receipt.wait(1).then(response => {
+								newStatusArray.splice(i, 1, "Confirmed");
+								setTaskStatuses([...newStatusArray]);
+
+								newTxInfo.splice(i, 1, response);
+								setTxInfo([...newTxInfo]);
+						
+								console.log(response)
+								sendWebhook(`confirmed https://goerli.etherscan.io/tx/${response.transactionHash}`);
+								if (i == tasks.length - 1) {
+									resolve("tx's confirmed");
+								}
+							}).catch(console.log);
+						}).catch(err => {
+							newStatusArray.splice(i, 1, "Tx will fail");
+							setTaskStatuses([...newStatusArray]);
+
+							newTxInfo.splice(i, 1, 2);
+							setTxInfo([...newTxInfo]);
+
+							console.log(err);
+							setTimeout(() => {
+								sendTask();
+							}, 5000)
+						});
+					}
+				}
+				sendTask();
 				
 			} catch(err) {
 				newStatusArray.splice(i, 1, "Error");
@@ -166,10 +192,33 @@ export async function startTasks(tasks, taskStatuses, setTaskStatuses) {
 	});
 }
 
-export function speedUpTasks(tasks) {
-	
+export function cancelAllTasks(tasks, taskStatuses, setTaskStatuses, txInfo, setTxInfo) {
+	let newStatusArray = taskStatuses;
+	let newTxInfo = txInfo;
+	for (let i = 0; i < tasks.length; i++) {
+		newStatusArray.splice(i, 1, "Canceling");
+		setTaskStatuses([...newStatusArray]);
+
+		newTxInfo.splice(i, 1, 3);
+		setTxInfo([...newTxInfo]);
+	}
 }
 
-export function cancelTasks(tasks) {
+export function stopAllTasks(tasks, taskStatuses, setTaskStatuses, txInfo, setTxInfo) {
+	console.log("attempting stop");
+	let newStatusArray = taskStatuses;
+	let newTxInfo = txInfo;
+	for (let i = 0; i < tasks.length; i++) {
+		if (newTxInfo[i] == 1 || newTxInfo[i] == 2) {
+			newStatusArray.splice(i, 1, "Stopping");
+			setTaskStatuses([...newStatusArray]);
+
+			newTxInfo.splice(i, 1, 3);
+			setTxInfo([...newTxInfo]);
+		}
+	}
+}
+
+export function speedUpAllTasks(tasks) {
 	
 }
