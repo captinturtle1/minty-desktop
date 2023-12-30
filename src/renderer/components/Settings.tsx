@@ -111,7 +111,7 @@ const Settings = () => {
               value={webhook}
               type="text"
               onChange={handleNewWebhook}
-              placeholder="set rpc"
+              placeholder="set webhook"
               className="w-96 pl-2 p-1 focus:outline-none rounded-lg bg-neutral-800 text-sm"
             />
           </form>

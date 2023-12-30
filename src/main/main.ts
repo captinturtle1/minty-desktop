@@ -16,6 +16,7 @@ import MenuBuilder from './menu';
 import { resolveHtmlPath } from './util';
 import fs from 'fs';
 
+app.setName("Minty");
 
 class AppUpdater {
   constructor() {
