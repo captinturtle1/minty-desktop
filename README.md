@@ -81,8 +81,3 @@ To set up a webhook, follow these steps:
   2. Navigate to Settings.
   3. Enter the webhook URL in the designated field.
   4. Click "Set" to confirm settings.
-
-
-## License
-
-This project is licensed under the MIT License.
