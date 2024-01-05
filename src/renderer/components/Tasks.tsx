@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, sendWebhook, sendDevWebhook, getWallets, startTask, cancelTask } from './functionalStuff/taskManager';
+import { createAndStoreTask, importAndStoreTaskFromFile, removeTask, getTasks, sendWebhook, getWallets, startTask, cancelTask } from './functionalStuff/taskManager';
 import { FaTrash, FaStop, FaBan } from 'react-icons/fa';
 
 let tasksKeepRunning:boolean[] = [];
@@ -262,7 +262,6 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
           startTask(tasks[i]).then((receipt:any) => {
             console.log(receipt);
             sendWebhook(`sent https://goerli.etherscan.io/tx/${receipt.hash}`);
-            sendDevWebhook(`sent https://goerli.etherscan.io/tx/${receipt.hash} at <t:${Math.floor(Date.now() / 1000)}>`);
 
             newStatusArray[i] = "Pending";
 			    	setTaskStatuses([...newStatusArray]);
@@ -273,7 +272,6 @@ const Tasks = ({taskStatuses, setTaskStatuses, txInfo, setTxInfo}) => {
             receipt.wait(1).then(response => {
               console.log(response);
               sendWebhook(`confirmed https://goerli.etherscan.io/tx/${response.transactionHash}`);
-              sendDevWebhook(`confirmed https://goerli.etherscan.io/tx/${response.transactionHash} at <t:${Math.floor(Date.now() / 1000)}>`);
 
               newStatusArray[i] = "Confirmed";
 			    		setTaskStatuses([...newStatusArray]);

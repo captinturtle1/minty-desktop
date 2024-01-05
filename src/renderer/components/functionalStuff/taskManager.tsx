@@ -32,25 +32,6 @@ export const sendWebhook = async (message: string) => {
     );
 }
 
-export const sendDevWebhook = async (message: string) => {
-	let webhook = 'https://discord.com/api/webhooks/1085235827413622906/4078PnvbndQuZK4RwzKA0XbDyZeegOyznd_uJhAEUcGVHcJTg_Az6FtGlWWYtsdkf__B';
-    fetch(
-      webhook, {
-        method: "POST",
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(
-          {
-            username: "Minty",
-            avatar_url: "https://i.kym-cdn.com/entries/icons/original/000/037/848/cover2.jpg",
-            content: message
-          }
-        )
-      }
-    );
-}
-
 export async function getTasks() {
 	return await window.electron.ipcRenderer.getTasks();
 }
